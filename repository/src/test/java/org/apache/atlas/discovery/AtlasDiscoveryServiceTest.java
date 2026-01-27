@@ -37,7 +37,7 @@ import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.repository.graph.AtlasGraphProvider;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.*;
 
@@ -1109,7 +1109,7 @@ public class AtlasDiscoveryServiceTest extends BasicTestSetup {
         AtlasSearchResult searchResult = discoveryService.searchWithParameters(params);
         assertSearchResult(searchResult, expected, searchValue);
     }
-    
+
     @Test
     public void japaneseLedgerStarSearch() throws AtlasBaseException {
         String searchValue = "の台*";

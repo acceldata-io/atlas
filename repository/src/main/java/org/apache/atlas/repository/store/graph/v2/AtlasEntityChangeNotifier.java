@@ -779,10 +779,8 @@ public class AtlasEntityChangeNotifier implements IAtlasEntityChangeNotifier {
             for (ListIterator<AtlasEntityHeader> iter = entities.listIterator(); iter.hasNext(); ) {
                 AtlasEntityHeader entity = iter.next();
 
-                if (org.apache.commons.lang.StringUtils.equals(guid, entity.getGuid())) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("purgeEntity(guid={}): REMOVED", entity.getGuid());
-                    }
+                if (org.apache.commons.lang3.StringUtils.equals(guid, entity.getGuid())) {
+                    LOG.debug("purgeEntity(guid={}): REMOVED", entity.getGuid());
 
                     iter.remove();
                 }
