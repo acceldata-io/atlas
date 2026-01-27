@@ -21,7 +21,7 @@ package org.apache.atlas.repository.graphdb.janus.migration;
 import org.apache.atlas.repository.Constants;
 import org.apache.atlas.type.AtlasBuiltInTypes.AtlasBigDecimalType;
 import org.apache.atlas.type.AtlasBuiltInTypes.AtlasBigIntegerType;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tinkerpop.gremlin.structure.Edge;
 import org.apache.tinkerpop.gremlin.structure.Graph;
 import org.apache.tinkerpop.gremlin.structure.Graph.Features.EdgeFeatures;

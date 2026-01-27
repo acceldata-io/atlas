@@ -40,7 +40,7 @@ import org.apache.atlas.utils.AuthenticationUtil;
 import org.apache.atlas.utils.TestResourceFileUtils;
 import org.apache.atlas.web.TestUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.AfterClass;

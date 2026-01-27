@@ -20,7 +20,7 @@ package org.apache.atlas.web.service;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.AuthInfo;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
