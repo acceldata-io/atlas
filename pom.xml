@@ -123,8 +123,8 @@
         <httpcomponents-httpclient.version>4.5.13</httpcomponents-httpclient.version>
         <httpcomponents-httpcore.version>4.4.13</httpcomponents-httpcore.version>
         <ivy.version>2.5.2</ivy.version>
-        <jackson.databind.version>2.12.7</jackson.databind.version>
-        <jackson.version>2.12.7</jackson.version>
+        <jackson.databind.version>2.17.2</jackson.databind.version>
+        <jackson.version>2.17.2</jackson.version>
         <janusgraph.cassandra.version>0.5.3</janusgraph.cassandra.version>
         <janusgraph.version>1.0.0</janusgraph.version>
         <java.version.required>1.8</java.version.required>
@@ -134,7 +134,7 @@
         <javax.servlet.version>3.1.0</javax.servlet.version>
         <jaxb.api.version>2.3.1</jaxb.api.version>
         <jersey-spring.version>1.19.4</jersey-spring.version>
-        <jersey.version>1.19</jersey.version>
+        <jersey.version>1.19.4</jersey.version>
         <jettison.version>1.5.4</jettison.version>
         <jetty-maven-plugin.stopWait>10</jetty-maven-plugin.stopWait>
         <jetty.version>9.4.56.v20240826</jetty.version>
@@ -315,6 +315,12 @@
                         <artifactId>spring-web</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
+                <version>2.2.3-1</version>
             </dependency>
 
             <!-- API documentation  -->
