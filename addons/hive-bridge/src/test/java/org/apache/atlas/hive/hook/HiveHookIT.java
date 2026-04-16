@@ -324,12 +324,16 @@ public class HiveHookIT extends HiveITBase {
     }
 
     private Set<WriteEntity> getOutputs(String inputName, Entity.Type entityType) throws HiveException {
+        return getOutputs(inputName, entityType, WriteEntity.WriteType.INSERT);
+    }
+
+    private Set<WriteEntity> getOutputs(String inputName, Entity.Type entityType, WriteEntity.WriteType writeType) throws HiveException {
         final WriteEntity entity;
 
         if (Entity.Type.DFS_DIR.equals(entityType) || Entity.Type.LOCAL_DIR.equals(entityType)) {
-            entity = new TestWriteEntity(lower(new Path(inputName).toString()), entityType);
+            entity = new TestWriteEntity(lower(new Path(inputName).toString()), entityType, writeType);
         } else {
-            entity = new TestWriteEntity(getQualifiedTblName(inputName), entityType);
+            entity = new TestWriteEntity(getQualifiedTblName(inputName), entityType, writeType);
         }
 
         if (entityType == Entity.Type.TABLE) {
@@ -735,9 +739,7 @@ public class HiveHookIT extends HiveITBase {
 
         inputs.addAll(getInputs(inputTable2Name, Entity.Type.TABLE));
 
-        Set<WriteEntity> outputs = getOutputs(insertTableName, Entity.Type.TABLE);
-
-        (outputs.iterator().next()).setWriteType(WriteEntity.WriteType.INSERT);
+        Set<WriteEntity> outputs = getOutputs(insertTableName, Entity.Type.TABLE, WriteEntity.WriteType.INSERT);
 
         HiveEventContext event = constructEvent(query, HiveOperation.QUERY, inputs, outputs);
 
@@ -799,9 +801,7 @@ public class HiveHookIT extends HiveITBase {
 
         inputs.addAll(getInputs(inputTable2Name, Entity.Type.TABLE));
 
-        Set<WriteEntity> outputs = getOutputs(insertTableName, Entity.Type.TABLE);
-
-        (outputs.iterator().next()).setWriteType(WriteEntity.WriteType.INSERT);
+        Set<WriteEntity> outputs = getOutputs(insertTableName, Entity.Type.TABLE, WriteEntity.WriteType.INSERT);
 
         HiveEventContext event = constructEvent(query, HiveOperation.QUERY, inputs, outputs);
 
@@ -894,9 +894,7 @@ public class HiveHookIT extends HiveITBase {
         runCommand(query);
 
         Set<ReadEntity>  inputs  = getInputs(tableName, Entity.Type.TABLE);
-        Set<WriteEntity> outputs = getOutputs(pFile1, Entity.Type.DFS_DIR);
-
-        outputs.iterator().next().setWriteType(WriteEntity.WriteType.PATH_WRITE);
+        Set<WriteEntity> outputs = getOutputs(pFile1, Entity.Type.DFS_DIR, WriteEntity.WriteType.INSERT);
 
         HiveEventContext hiveEventContext = constructEvent(query, HiveOperation.QUERY, inputs, outputs);
         AtlasEntity      processEntity    = validateProcess(hiveEventContext);
@@ -968,9 +966,7 @@ public class HiveHookIT extends HiveITBase {
         runCommand(query);
 
         Set<ReadEntity> inputs = getInputs(tableName, Entity.Type.TABLE);
-        Set<WriteEntity> outputs = getOutputs(pFile1, Entity.Type.DFS_DIR);
-
-        outputs.iterator().next().setWriteType(WriteEntity.WriteType.PATH_WRITE);
+        Set<WriteEntity> outputs = getOutputs(pFile1, Entity.Type.DFS_DIR, WriteEntity.WriteType.INSERT);
 
         Set<ReadEntity> partitionIps = new LinkedHashSet<>(inputs);
 
@@ -985,9 +981,7 @@ public class HiveHookIT extends HiveITBase {
 
         runCommand(query);
 
-        Set<WriteEntity> pFile2Outputs = getOutputs(pFile2, Entity.Type.DFS_DIR);
-
-        pFile2Outputs.iterator().next().setWriteType(WriteEntity.WriteType.PATH_WRITE);
+        Set<WriteEntity> pFile2Outputs = getOutputs(pFile1, Entity.Type.DFS_DIR, WriteEntity.WriteType.INSERT);
 
         //Now the process has 2 paths - one older with deleted reference to partition and another with the the latest partition
         Set<WriteEntity> p2Outputs = new LinkedHashSet<WriteEntity>() {{
@@ -1016,9 +1010,7 @@ public class HiveHookIT extends HiveITBase {
         runCommand(query);
 
         Set<ReadEntity> inputs = getInputs(tableName, Entity.Type.TABLE);
-        Set<WriteEntity> outputs = getOutputs(insertTableName, Entity.Type.TABLE);
-
-        outputs.iterator().next().setWriteType(WriteEntity.WriteType.INSERT);
+        Set<WriteEntity> outputs = getOutputs(insertTableName, Entity.Type.TABLE, WriteEntity.WriteType.INSERT);
 
         HiveEventContext event = constructEvent(query,  HiveOperation.QUERY, inputs, outputs);
         AtlasEntity hiveProcess = validateProcess(event);
@@ -1042,9 +1034,7 @@ public class HiveHookIT extends HiveITBase {
         runCommand(query);
 
         Set<ReadEntity>  inputs  = getInputs(tableName, Entity.Type.TABLE);
-        Set<WriteEntity> outputs = getOutputs(insertTableName, Entity.Type.TABLE);
-
-        outputs.iterator().next().setWriteType(WriteEntity.WriteType.INSERT);
+        Set<WriteEntity> outputs = getOutputs(insertTableName, Entity.Type.TABLE, WriteEntity.WriteType.INSERT);
 
         Set<ReadEntity> partitionIps = new LinkedHashSet<ReadEntity>() {
             {
@@ -2565,12 +2555,20 @@ public class HiveHookIT extends HiveITBase {
 
     // WriteEntity class doesn't offer a constructor that takes (name, type). A hack to get the tests going!
     private static class TestWriteEntity extends WriteEntity {
-        private final String      name;
-        private final Entity.Type type;
+        private final String           name;
+        private final Entity.Type      type;
+        private WriteEntity.WriteType  writeType;
 
         public TestWriteEntity(String name, Entity.Type type) {
-            this.name = name;
-            this.type = type;
+            this.name      = name;
+            this.type      = type;
+            this.writeType = WriteEntity.WriteType.INSERT;
+        }
+
+        public TestWriteEntity(String name, Entity.Type type, WriteEntity.WriteType writeType) {
+            this.name      = name;
+            this.type      = type;
+            this.writeType = writeType;
         }
 
         @Override
@@ -2578,6 +2576,9 @@ public class HiveHookIT extends HiveITBase {
 
         @Override
         public Entity.Type getType() { return type; }
+
+        @Override
+        public WriteEntity.WriteType getWriteType() { return writeType; }
     }
 
     private int numberOfProcessExecutions(AtlasEntity hiveProcess) {
