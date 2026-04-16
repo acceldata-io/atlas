@@ -47,6 +47,7 @@ import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.Driver;
+import org.apache.hadoop.hive.ql.processors.CommandProcessorException;
 import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.testng.annotations.BeforeClass;
@@ -477,8 +478,11 @@ public class ImpalaLineageITBase {
 
     protected void runCommandWithDelay(Driver driver, String cmd, int sleepMs) throws Exception {
         LOG.debug("Running command '{}'", cmd);
-        CommandProcessorResponse response = driver.run(cmd);
-        assertEquals(response.getResponseCode(), 0);
+        try{
+            driver.run(cmd);
+        } catch (CommandProcessorException e) {
+            throw new RuntimeException(e);
+        }
         if (sleepMs != 0) {
             Thread.sleep(sleepMs);
         }

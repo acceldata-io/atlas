@@ -509,7 +509,7 @@
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>com.sun.jersey</groupId>
-                                            <artifactId>jersey-json</artifactId>
+                                            <artifactId>jersey-bundle</artifactId>
                                             <version>${jersey.version}</version>
                                         </artifactItem>
                                         <artifactItem>
