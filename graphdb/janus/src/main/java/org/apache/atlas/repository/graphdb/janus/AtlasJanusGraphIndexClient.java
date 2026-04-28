@@ -155,7 +155,7 @@ public class AtlasJanusGraphIndexClient implements AtlasGraphIndexClient {
                 } catch (Throwable t) {
                     lastExcp = t;
 
-                    LOG.warn("Error encountered in updating request handler {} for collection {}. Will attempt to create one", FREETEXT_REQUEST_HANDLER, collectionName);
+                    LOG.warn("Error encountered in updating request handler {} for collection {}. Will attempt to create one", FREETEXT_REQUEST_HANDLER, collectionName, t);
                 }
 
                 try {
@@ -166,6 +166,11 @@ public class AtlasJanusGraphIndexClient implements AtlasGraphIndexClient {
 
                     return;
                 } catch (Throwable t) {
+                    if (t.getMessage() != null && t.getMessage().contains("already exists")) {
+                        LOG.info("Request handler {} already exists for collection {}; treating as success", FREETEXT_REQUEST_HANDLER, collectionName);
+                        return;
+                    }
+
                     lastExcp = t;
 
                     LOG.warn("Error encountered in creating request handler {} for collection {}", FREETEXT_REQUEST_HANDLER, collectionName, t);
@@ -449,11 +454,10 @@ public class AtlasJanusGraphIndexClient implements AtlasGraphIndexClient {
                 "       'defaults': " + "{" +
                 "          'defType': 'edismax' , " +
                 "          'rows':    100 , " +
-                "          'lowercaseOperators': true , " +
                 "          'qf': '%s' , " +
                 "          'hl.fl': '*' , " +
                 "          'hl.requireFieldMatch': true , " +
-                "          'lowercaseOperators': true , " +
+                "          'lowercaseOperators': true " +
                 "         }" +
                 "    }" +
                 "}", action, FREETEXT_REQUEST_HANDLER, qfValue);
