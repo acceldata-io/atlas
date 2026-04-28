@@ -142,7 +142,16 @@ public class KafkaNotification extends AbstractNotification implements Service {
         properties.put("enable.auto.commit", kafkaConf.getBoolean("enable.auto.commit", oldApiCommitEnableFlag));
         properties.put("session.timeout.ms", kafkaConf.getString("session.timeout.ms", "30000"));
 
-        if(applicationProperties.getBoolean(TLS_ENABLED, false)) {
+        String kafkaSslTruststoreLocation = kafkaConf.getString("ssl.truststore.location", null);
+        String kafkaSslTruststorePassword = kafkaConf.getString("ssl.truststore.password", null);
+
+        if (kafkaSslTruststoreLocation != null && !kafkaSslTruststoreLocation.isEmpty()) {
+            properties.put("ssl.truststore.location", kafkaSslTruststoreLocation);
+        }
+
+        if (kafkaSslTruststorePassword != null && !kafkaSslTruststorePassword.isEmpty()) {
+            properties.put("ssl.truststore.password", kafkaSslTruststorePassword);
+        } else if (applicationProperties.getBoolean(TLS_ENABLED, false)) {
             try {
                 properties.put("ssl.truststore.password", getPassword(applicationProperties, TRUSTSTORE_PASSWORD_KEY));
             } catch (Exception e) {
