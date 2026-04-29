@@ -206,6 +206,10 @@
                     <groupId>ch.qos.logback</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hbase</groupId>
+                    <artifactId>hbase-shaded-client</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
