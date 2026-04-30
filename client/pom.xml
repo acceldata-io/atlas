@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.atlas</groupId>
         <artifactId>apache-atlas</artifactId>
-        <version>2.4.0.3.3.6.3-102</version>
+        <version>2.4.0.3.3.6.3-103</version>
     </parent>
 
     <artifactId>atlas-client</artifactId>
