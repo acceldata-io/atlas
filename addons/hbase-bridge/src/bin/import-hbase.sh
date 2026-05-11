@@ -125,9 +125,9 @@ else
 fi
 
 if [ ! -z "$HADOOP_CP" ]; then
-  CP="${HBASE_CP}:${HADOOP_CP}:${ATLASCPPATH}"
+  CP="${ATLASCPPATH}:${HBASE_CP}:${HADOOP_CP}"
 else
-  CP="${HBASE_CP}:${ATLASCPPATH}"
+  CP="${ATLASCPPATH}:${HBASE_CP}"
 fi
 
 # If running in cygwin, convert pathnames and classpath to Windows format.
