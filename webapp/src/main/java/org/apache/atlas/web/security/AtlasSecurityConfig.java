@@ -18,7 +18,7 @@
 package org.apache.atlas.web.security;
 
 import org.apache.atlas.web.filters.*;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakConfigResolver;

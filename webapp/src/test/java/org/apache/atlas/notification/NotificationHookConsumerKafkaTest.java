@@ -35,6 +35,7 @@ import org.apache.atlas.repository.store.graph.v2.EntityStream;
 import org.apache.atlas.type.AtlasType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.web.service.ServiceState;
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.KafkaException;
@@ -54,7 +55,6 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.atlas.ApplicationProperties;
 import static org.testng.Assert.*;
 

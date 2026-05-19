@@ -18,8 +18,9 @@ package org.apache.atlas.web.security;
 
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.web.TestUtils;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.configuration2.io.FileHandler;
 import org.apache.hadoop.minikdc.MiniKdc;
 import org.apache.hadoop.security.ssl.SSLFactory;
 import org.apache.hadoop.security.ssl.SSLHostnameVerifier;
@@ -58,17 +59,89 @@ public class BaseSecurityTest {
             + " useTicketCache=false\n" + " doNotPrompt=true\n" + " storeKey=true;\n" + "}; \n";
     protected MiniKdc kdc;
 
+    public static String writeConfiguration(final PropertiesConfiguration configuration) throws Exception {
+        String confLocation = System.getProperty("atlas.conf");
+        URL    url;
+        if (confLocation == null) {
+            url = BaseSecurityTest.class.getResource("/" + ApplicationProperties.APPLICATION_PROPERTIES);
+        } else {
+            url = new File(confLocation, ApplicationProperties.APPLICATION_PROPERTIES).toURI().toURL();
+        }
+        PropertiesConfiguration configuredProperties = new PropertiesConfiguration();
+        FileHandler fileHandler = new FileHandler(configuredProperties);
+        fileHandler.load(url);
+
+        configuredProperties.copy(configuration);
+
+        String persistDir = TestUtils.getTempDirectory();
+        configuredProperties.setProperty("atlas.authentication.method.file", "true");
+        configuredProperties.setProperty("atlas.authentication.method.file.filename", persistDir
+                + "/users-credentials");
+        configuredProperties.setProperty("atlas.auth.policy.file", persistDir
+                + "/policy-store.txt");
+        TestUtils.writeConfiguration(configuredProperties, persistDir + File.separator +
+                ApplicationProperties.APPLICATION_PROPERTIES);
+        setupUserCredential(persistDir);
+        setUpPolicyStore(persistDir);
+        ApplicationProperties.forceReload();
+        return persistDir;
+    }
+
+    public static void setupUserCredential(String tmpDir) throws Exception {
+        String credentialFileStr = "admin=ADMIN::8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918\n" +
+                "michael=DATA_SCIENTIST::95bfb24de17d285d734b9eaa9109bfe922adc85f20d2e5e66a78bddb4a4ebddb\n" +
+                "paul=DATA_STEWARD::e7c0dcf5f8a93e93791e9bac1ae454a691c1d2a902fc4256d489e96c1b9ac68c\n" +
+                "testuser=DATA_STEWARD::e7c0dcf5f8a93e93791e9bac1ae454a691c1d2a902fc4256d489e96c1b9ac68c\n";
+
+        File credentialFile = new File(tmpDir, "users-credentials");
+
+        FileUtils.write(credentialFile, credentialFileStr);
+    }
+
+    public static void setUpPolicyStore(String tmpDir) throws Exception {
+        String policyStr = "adminPolicy;;admin:rwud;;ROLE_ADMIN:rwud;;type:*,entity:*,operation:*\n" +
+                "dataStewardPolicy;;testuser:rwud;;DATA_STEWARD:rwu;;type:*,entity:*\n";
+
+        File policyFile = new File(tmpDir, "policy-store.txt");
+        FileUtils.write(policyFile, policyStr);
+    }
+
+    public static void persistSSLClientConfiguration(org.apache.commons.configuration2.Configuration clientConfig)
+            throws AtlasException, IOException {
+        //trust settings
+        Configuration configuration = new Configuration(false);
+        File          sslClientFile = getSSLClientFile();
+        if (!sslClientFile.exists()) {
+            configuration.set("ssl.client.truststore.type", "jks");
+            configuration.set("ssl.client.truststore.location", clientConfig.getString(TRUSTSTORE_FILE_KEY));
+            if (clientConfig.getBoolean(CLIENT_AUTH_KEY, false)) {
+                // need to get client key properties
+                configuration.set("ssl.client.keystore.location", clientConfig.getString(KEYSTORE_FILE_KEY));
+                configuration.set("ssl.client.keystore.type", "jks");
+            }
+            // add the configured credential provider
+            configuration.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH,
+                    clientConfig.getString(CERT_STORES_CREDENTIAL_PROVIDER_PATH));
+            String hostnameVerifier = clientConfig.getString(SSLFactory.SSL_HOSTNAME_VERIFIER_KEY);
+            if (hostnameVerifier != null) {
+                configuration.set(SSLFactory.SSL_HOSTNAME_VERIFIER_KEY, hostnameVerifier);
+            }
+
+            configuration.writeXml(new FileWriter(sslClientFile));
+        }
+    }
+
     protected void generateTestProperties(Properties props) throws ConfigurationException, IOException {
-        PropertiesConfiguration config =
-                new PropertiesConfiguration(System.getProperty("user.dir") +
-                  "/../src/conf/" + ApplicationProperties.APPLICATION_PROPERTIES);
+        PropertiesConfiguration config = new PropertiesConfiguration();
+        FileHandler fileHandler = new FileHandler(config);
+        fileHandler.load(System.getProperty("user.dir") + "/../src/conf/" + ApplicationProperties.APPLICATION_PROPERTIES);
         for (String propName : props.stringPropertyNames()) {
             config.setProperty(propName, props.getProperty(propName));
         }
         File file = new File(System.getProperty("user.dir"), ApplicationProperties.APPLICATION_PROPERTIES);
         file.deleteOnExit();
         Writer fileWriter = new FileWriter(file);
-        config.save(fileWriter);
+        fileHandler.save(fileWriter);
     }
 
     protected void startEmbeddedServer(Server server) throws Exception {
@@ -143,53 +216,6 @@ public class BaseSecurityTest {
         configuration.setProperty(SSLFactory.SSL_HOSTNAME_VERIFIER_KEY,
                 SSLHostnameVerifier.DEFAULT_AND_LOCALHOST.toString());
         return  configuration;
-    }
-
-    public static String writeConfiguration(final PropertiesConfiguration configuration) throws Exception {
-        String confLocation = System.getProperty("atlas.conf");
-        URL url;
-        if (confLocation == null) {
-            url = BaseSecurityTest.class.getResource("/" + ApplicationProperties.APPLICATION_PROPERTIES);
-        } else {
-            url = new File(confLocation, ApplicationProperties.APPLICATION_PROPERTIES).toURI().toURL();
-        }
-        PropertiesConfiguration configuredProperties = new PropertiesConfiguration();
-        configuredProperties.load(url);
-
-        configuredProperties.copy(configuration);
-
-        String persistDir = TestUtils.getTempDirectory();
-        configuredProperties.setProperty("atlas.authentication.method.file", "true");
-        configuredProperties.setProperty("atlas.authentication.method.file.filename", persistDir
-                + "/users-credentials");
-        configuredProperties.setProperty("atlas.auth.policy.file",persistDir
-                + "/policy-store.txt" );
-        TestUtils.writeConfiguration(configuredProperties, persistDir + File.separator +
-                ApplicationProperties.APPLICATION_PROPERTIES);
-        setupUserCredential(persistDir);
-        setUpPolicyStore(persistDir);
-        ApplicationProperties.forceReload();
-        return persistDir;
-    }
-
-    public static void setupUserCredential(String tmpDir) throws Exception {
-
-        StringBuilder credentialFileStr = new StringBuilder(1024);
-        credentialFileStr.append("admin=ADMIN::8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918\n");
-        credentialFileStr.append("michael=DATA_SCIENTIST::95bfb24de17d285d734b9eaa9109bfe922adc85f20d2e5e66a78bddb4a4ebddb\n");
-        credentialFileStr.append("paul=DATA_STEWARD::e7c0dcf5f8a93e93791e9bac1ae454a691c1d2a902fc4256d489e96c1b9ac68c\n");
-        credentialFileStr.append("testuser=DATA_STEWARD::e7c0dcf5f8a93e93791e9bac1ae454a691c1d2a902fc4256d489e96c1b9ac68c\n");
-        File credentialFile = new File(tmpDir, "users-credentials");
-        FileUtils.write(credentialFile, credentialFileStr.toString());
-    }
-
-    public static void setUpPolicyStore(String tmpDir) throws Exception {
-        StringBuilder policyStr = new StringBuilder(1024);
-        policyStr.append("adminPolicy;;admin:rwud;;ROLE_ADMIN:rwud;;type:*,entity:*,operation:*\n");
-        policyStr.append("dataStewardPolicy;;testuser:rwud;;DATA_STEWARD:rwu;;type:*,entity:*\n");
-
-        File policyFile = new File(tmpDir, "policy-store.txt");
-        FileUtils.write(policyFile, policyStr.toString());
     }
 
     public static void persistSSLClientConfiguration(org.apache.commons.configuration.Configuration clientConfig)
