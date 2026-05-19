@@ -19,7 +19,6 @@ package org.apache.atlas.web.listeners;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.security.SecurityProperties;
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -48,9 +47,10 @@ public class LoginProcessor {
      */
     public void login() {
         // first, let's see if we're running in a hadoop cluster and have the env configured
-        boolean isHadoopCluster = isHadoopCluster();
-        Configuration hadoopConfig = isHadoopCluster ? getHadoopConfiguration() : new Configuration(false);
-        org.apache.commons.configuration.Configuration configuration = getApplicationConfiguration();
+        boolean                                        isHadoopCluster = isHadoopCluster();
+        Configuration                                  hadoopConfig    = isHadoopCluster ? getHadoopConfiguration() : new Configuration(false);
+        org.apache.commons.configuration2.Configuration configuration   = getApplicationConfiguration();
+
         if (!isHadoopCluster) {
             // need to read the configured authentication choice and create the UGI configuration
             setupHadoopConfiguration(hadoopConfig, configuration);
@@ -58,8 +58,7 @@ public class LoginProcessor {
         doServiceLogin(hadoopConfig, configuration);
     }
 
-    protected void doServiceLogin(Configuration hadoopConfig,
-            org.apache.commons.configuration.Configuration configuration) {
+    protected void doServiceLogin(Configuration hadoopConfig, org.apache.commons.configuration2.Configuration configuration) {
         UserGroupInformation.setConfiguration(hadoopConfig);
 
         UserGroupInformation ugi = null;
@@ -80,22 +79,8 @@ public class LoginProcessor {
         }
     }
 
-    private String getHostname(org.apache.commons.configuration.Configuration configuration) {
-        String bindAddress = configuration.getString(SecurityProperties.BIND_ADDRESS);
-        if (bindAddress == null) {
-            LOG.info("No host name configured.  Defaulting to local host name.");
-            try {
-                bindAddress = InetAddress.getLocalHost().getHostName();
-            } catch (UnknownHostException e) {
-                throw new IllegalStateException(e);
-            }
-        }
-        return bindAddress;
-    }
-
-    protected void setupHadoopConfiguration(Configuration hadoopConfig, org.apache.commons.configuration.Configuration
-            configuration) {
-        String authMethod = "";
+    protected void setupHadoopConfiguration(Configuration hadoopConfig, org.apache.commons.configuration2.Configuration configuration) {
+        String authMethod           = "";
         String kerberosAuthNEnabled = configuration != null ? configuration.getString(AUTHENTICATION_KERBEROS_METHOD) : null;
         // getString may return null, and would like to log the nature of the default setting
         if (kerberosAuthNEnabled == null || kerberosAuthNEnabled.equalsIgnoreCase("false")) {
@@ -131,9 +116,8 @@ public class LoginProcessor {
     /**
      * Returns the metadata application configuration.
      * @return the metadata configuration.
-     * @throws ConfigurationException
      */
-    protected org.apache.commons.configuration.Configuration getApplicationConfiguration() {
+    protected org.apache.commons.configuration2.Configuration getApplicationConfiguration() {
         try {
             return ApplicationProperties.get();
         } catch (AtlasException e) {
@@ -154,5 +138,21 @@ public class LoginProcessor {
             // ignore - false is default setting
         }
         return isHadoopCluster;
+    }
+
+    private String getHostname(org.apache.commons.configuration2.Configuration configuration) {
+        String bindAddress = configuration.getString(SecurityProperties.BIND_ADDRESS);
+
+        if (bindAddress == null) {
+            LOG.info("No host name configured.  Defaulting to local host name.");
+
+            try {
+                bindAddress = InetAddress.getLocalHost().getHostName();
+            } catch (UnknownHostException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+
+        return bindAddress;
     }
 }

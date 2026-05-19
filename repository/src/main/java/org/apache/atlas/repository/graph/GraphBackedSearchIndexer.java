@@ -44,7 +44,7 @@ import org.apache.atlas.repository.store.graph.v2.AtlasGraphUtilsV2;
 import org.apache.atlas.type.*;
 import org.apache.atlas.type.AtlasStructType.AtlasAttribute;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -328,7 +328,7 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
     private void initialize() throws RepositoryException, IndexException {
         initialize(provider.get());
     }
-    
+
     /**
      * Initializes the indices for the graph - create indices for Global AtlasVertex and AtlasEdge Keys
      */
@@ -933,7 +933,7 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
 
         return propertyKey;
     }
-    
+
     private void createVertexCompositeIndex(AtlasGraphManagement management, Class propertyClass, AtlasPropertyKey propertyKey,
                                             boolean enforceUniqueness) {
         String propertyName = propertyKey.getName();
@@ -1002,7 +1002,7 @@ public class GraphBackedSearchIndexer implements SearchIndexer, ActiveStateChang
     private boolean isIndexApplicable(Class propertyClass, AtlasCardinality cardinality) {
         return !(INDEX_EXCLUSION_CLASSES.contains(propertyClass) || cardinality.isMany());
     }
-    
+
     public void commit(AtlasGraphManagement management) throws IndexException {
         try {
             management.commit();

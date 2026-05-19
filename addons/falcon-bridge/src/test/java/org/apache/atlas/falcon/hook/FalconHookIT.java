@@ -31,7 +31,7 @@ import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.atlas.v1.typesystem.types.utils.TypesUtil;
 import org.apache.atlas.utils.AuthenticationUtil;
 import org.apache.atlas.utils.ParamChecker;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.atlas.falcon.service.AtlasService;
 import org.apache.falcon.entity.FeedHelper;

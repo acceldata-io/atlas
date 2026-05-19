@@ -45,10 +45,12 @@ public class AtlasGraphProvider implements IAtlasGraphProvider {
     private static final String  GRAPH_REPOSITORY_MAX_RETRIES     = "atlas.graph.repository.max.retries";
     private static final String  GRAPH_REPOSITORY_RETRY_SLEEPTIME = "atlas.graph.repository.retry.sleeptime.ms";
 
-    private static org.apache.commons.configuration.Configuration APPLICATION_PROPERTIES = null;
+    private static org.apache.commons.configuration2.Configuration APPLICATION_PROPERTIES = null;
+    private static volatile GraphDatabase<?, ?>                            graphDb;
+    private static          org.apache.commons.configuration2.Configuration applicationProperties;
 
     public static <V, E> AtlasGraph<V, E> getGraphInstance() {
-        GraphDatabase<?,?> db = getGraphDatabase();      
+        GraphDatabase<?,?> db = getGraphDatabase();
         AtlasGraph<?, ?> graph = db.getGraph();
         return (AtlasGraph<V, E>) graph;
 
@@ -64,7 +66,7 @@ public class AtlasGraphProvider implements IAtlasGraphProvider {
                         graphDb_ = (GraphDatabase<V, E>) implClass.newInstance();
                     }
                 }
-            }         
+            }
             return graphDb_;
         }
         catch (IllegalAccessException | InstantiationException e) {

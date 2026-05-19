@@ -57,12 +57,33 @@ public class SecureClientUtils {
 
     public final static int DEFAULT_SOCKET_TIMEOUT_IN_MSECS = 1 * 60 * 1000; // 1 minute
     private static final Logger LOG = LoggerFactory.getLogger(SecureClientUtils.class);
-    private SSLFactory factory = null;
+
+    private SSLFactory factory;
+
+    public static void persistSSLClientConfiguration(org.apache.commons.configuration2.Configuration clientConfig, String confLocation) throws AtlasException, IOException {
+        //trust settings
+        Configuration configuration = new Configuration(false);
+        File          sslClientFile = getSSLClientFile(confLocation);
+
+        if (!sslClientFile.exists()) {
+            configuration.set("ssl.client.truststore.type", "jks");
+            configuration.set("ssl.client.truststore.location", clientConfig.getString(TRUSTSTORE_FILE_KEY));
 
 
-    public  URLConnectionClientHandler getClientConnectionHandler(DefaultClientConfig config,
-            org.apache.commons.configuration.Configuration clientConfig, String doAsUser,
-            final UserGroupInformation ugi) {
+            // add the configured credential provider
+            configuration.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH, clientConfig.getString(CERT_STORES_CREDENTIAL_PROVIDER_PATH));
+
+            String hostnameVerifier = clientConfig.getString(SSLFactory.SSL_HOSTNAME_VERIFIER_KEY);
+
+            if (hostnameVerifier != null) {
+                configuration.set(SSLFactory.SSL_HOSTNAME_VERIFIER_KEY, hostnameVerifier);
+            }
+
+            configuration.writeXml(new FileWriter(sslClientFile));
+        }
+    }
+
+    public URLConnectionClientHandler getClientConnectionHandler(DefaultClientConfig config, org.apache.commons.configuration2.Configuration clientConfig, String doAsUser, final UserGroupInformation ugi) {
         config.getProperties().put(URLConnectionClientHandler.PROPERTY_HTTP_URL_CONNECTION_SET_METHOD_WORKAROUND, true);
         Configuration conf = new Configuration();
         conf.addResource(conf.get(SSLFactory.SSL_CLIENT_CONF_KEY, SecurityProperties.SSL_CLIENT_PROPERTIES));
@@ -198,31 +219,6 @@ public class SecureClientUtils {
             throw new AtlasException("Failed to find client configuration directory", e);
         }
         return new File(sslDir, SecurityProperties.SSL_CLIENT_PROPERTIES);
-    }
-
-    public static void persistSSLClientConfiguration(org.apache.commons.configuration.Configuration clientConfig, String confLocation)
-    throws AtlasException, IOException {
-        //trust settings
-        Configuration configuration = new Configuration(false);
-        File sslClientFile = getSSLClientFile(confLocation);
-        if (!sslClientFile.exists()) {
-            configuration.set("ssl.client.truststore.type", "jks");
-            configuration.set("ssl.client.truststore.location", clientConfig.getString(TRUSTSTORE_FILE_KEY));
-            if (clientConfig.getBoolean(CLIENT_AUTH_KEY, false)) {
-                // need to get client key properties
-                configuration.set("ssl.client.keystore.location", clientConfig.getString(KEYSTORE_FILE_KEY));
-                configuration.set("ssl.client.keystore.type", "jks");
-            }
-            // add the configured credential provider
-            configuration.set(CredentialProviderFactory.CREDENTIAL_PROVIDER_PATH,
-                    clientConfig.getString(CERT_STORES_CREDENTIAL_PROVIDER_PATH));
-            String hostnameVerifier = clientConfig.getString(SSLFactory.SSL_HOSTNAME_VERIFIER_KEY);
-            if (hostnameVerifier != null) {
-                configuration.set(SSLFactory.SSL_HOSTNAME_VERIFIER_KEY, hostnameVerifier);
-            }
-
-            configuration.writeXml(new FileWriter(sslClientFile));
-        }
     }
 
     public  URLConnectionClientHandler getUrlConnectionClientHandler() {

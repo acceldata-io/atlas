@@ -19,7 +19,7 @@
 package org.apache.atlas.web.service;
 
 import org.apache.atlas.ha.HAConfiguration;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;

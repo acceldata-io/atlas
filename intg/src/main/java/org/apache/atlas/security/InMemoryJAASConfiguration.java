@@ -20,7 +20,7 @@ package org.apache.atlas.security;
 
 import org.apache.atlas.AtlasException;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.configuration.ConfigurationConverter;
+import org.apache.commons.configuration2.ConfigurationConverter;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.security.SecurityUtil;
 import org.slf4j.Logger;
@@ -176,7 +176,7 @@ public final class InMemoryJAASConfiguration extends Configuration {
         }
     }
 
-    public static void init(org.apache.commons.configuration.Configuration atlasConfiguration) throws AtlasException {
+    public static void init(org.apache.commons.configuration2.Configuration atlasConfiguration) throws AtlasException {
         LOG.debug("==> InMemoryJAASConfiguration.init()");
 
         if (atlasConfiguration != null && !atlasConfiguration.isEmpty()) {

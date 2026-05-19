@@ -31,12 +31,6 @@
     <name>Apache Atlas Test Utility Tools</name>
 
     <dependencies>
-
-        <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>

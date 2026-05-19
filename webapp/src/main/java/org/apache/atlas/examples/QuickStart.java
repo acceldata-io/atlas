@@ -34,7 +34,7 @@ import org.apache.atlas.v1.model.typedef.*;
 import org.apache.atlas.type.AtlasType;
 import org.apache.atlas.v1.typesystem.types.utils.TypesUtil;
 import org.apache.atlas.utils.AuthenticationUtil;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 
 import java.util.Arrays;
 import java.util.Collections;

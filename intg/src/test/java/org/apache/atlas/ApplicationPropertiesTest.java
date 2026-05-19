@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.util.AbstractMap;
 
 import org.apache.atlas.utils.AtlasConfigurationUtil;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 

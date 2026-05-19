@@ -20,8 +20,9 @@ package org.apache.atlas.web.integration;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.atlas.AtlasClient;
-import org.apache.commons.configuration.PropertiesConfiguration;
 import org.testng.Assert;
+import org.apache.commons.configuration2.PropertiesConfiguration;
+import org.apache.commons.configuration2.io.FileHandler;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -40,7 +41,10 @@ public class AdminJerseyResourceIT extends BaseResourceIT {
         ObjectNode response = atlasClientV1.callAPIWithBodyAndParams(AtlasClient.API_V1.VERSION, null, (String[]) null);
         Assert.assertNotNull(response);
 
-        PropertiesConfiguration buildConfiguration = new PropertiesConfiguration("atlas-buildinfo.properties");
+        PropertiesConfiguration buildConfiguration = new PropertiesConfiguration();
+
+        FileHandler fileHandler = new FileHandler(buildConfiguration);
+        fileHandler.load("atlas-buildinfo.properties");
 
         Assert.assertEquals(response.get("Version").asText(), buildConfiguration.getString("build.version"));
         Assert.assertEquals(response.get("Name").asText(), buildConfiguration.getString("project.name"));

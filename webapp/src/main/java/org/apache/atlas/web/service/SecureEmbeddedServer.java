@@ -95,7 +95,7 @@ public class SecureEmbeddedServer extends EmbeddedServer {
 
     @Override
     protected Connector getConnector(String host, int port) throws IOException {
-        org.apache.commons.configuration.Configuration config = getConfiguration();
+        org.apache.commons.configuration2.Configuration config = getConfiguration();
 
         SSLContext sslContext = getSSLContext();
         if (sslContext != null) {
@@ -155,7 +155,7 @@ public class SecureEmbeddedServer extends EmbeddedServer {
      * Returns the application configuration.
      * @return
      */
-    protected org.apache.commons.configuration.Configuration getConfiguration() {
+    protected org.apache.commons.configuration2.Configuration getConfiguration() {
         try {
             return ApplicationProperties.get();
         } catch (AtlasException e) {

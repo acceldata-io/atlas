@@ -20,7 +20,7 @@ package org.apache.atlas.web.filters;
 
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -47,7 +47,7 @@ import java.util.regex.Pattern;
 public class AtlasCSRFPreventionFilter implements Filter {
 	private static final Logger LOG = LoggerFactory.getLogger(AtlasCSRFPreventionFilter.class);
 	private static Configuration configuration;
-	
+
 	static {
 	    try {
             configuration  = ApplicationProperties.get();
@@ -56,7 +56,7 @@ public class AtlasCSRFPreventionFilter implements Filter {
             LOG.error(e.getMessage(), e);
         }
 	}
-	
+
 	public static final boolean isCSRF_ENABLED = configuration.getBoolean("atlas.rest-csrf.enabled", true);
 	public static final String BROWSER_USER_AGENT_PARAM = "atlas.rest-csrf.browser-useragents-regex";
 	public static final String BROWSER_USER_AGENTS_DEFAULT = "^Mozilla.*,^Opera.*,^Chrome";
@@ -81,13 +81,13 @@ public class AtlasCSRFPreventionFilter implements Filter {
 			LOG.error("Error while initializing Filter ", e);
 		}
 	}
-	
+
 	public void init(FilterConfig filterConfig) throws ServletException {
 		String customHeader = configuration.getString(CUSTOM_HEADER_PARAM, HEADER_DEFAULT);
 	    if (customHeader != null) {
 	      headerName = customHeader;
 	    }
-	    
+
 	    String customMethodsToIgnore = configuration.getString(CUSTOM_METHODS_TO_IGNORE_PARAM, METHODS_TO_IGNORE_DEFAULT);
         if (customMethodsToIgnore != null) {
           parseMethodsToIgnore(customMethodsToIgnore);
@@ -101,13 +101,13 @@ public class AtlasCSRFPreventionFilter implements Filter {
         parseBrowserUserAgents(agents);
         LOG.info("Adding cross-site request forgery (CSRF) protection");
 	}
-	
+
 	void parseMethodsToIgnore(String mti) {
         String[] methods = mti.split(",");
         methodsToIgnore = new HashSet<>();
 		Collections.addAll(methodsToIgnore, methods);
 	}
-	
+
 	void parseBrowserUserAgents(String userAgents) {
 		String[] agentsArray = userAgents.split(",");
 		browserUserAgents = new HashSet<>();
@@ -115,7 +115,7 @@ public class AtlasCSRFPreventionFilter implements Filter {
 			browserUserAgents.add(Pattern.compile(patternString));
 		}
 	}
-	
+
 	protected boolean isBrowser(String userAgent) {
 		if (userAgent == null) {
 			return false;
@@ -130,7 +130,7 @@ public class AtlasCSRFPreventionFilter implements Filter {
 		}
 		return false;
 	}
-	  
+
 	public interface HttpInteraction {
 		/**
 		 * Returns the value of a header.
@@ -210,7 +210,7 @@ public class AtlasCSRFPreventionFilter implements Filter {
 
 	public void destroy() {
 	}
-	
+
 	private static final class ServletFilterHttpInteraction implements
 			HttpInteraction {
 
