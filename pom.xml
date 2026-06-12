@@ -80,6 +80,7 @@
     </modules>
 
     <properties>
+        <odp.release.version>3.4.3.0-SNAPSHOT</odp.release.version>
         <MaxPermGen>512m</MaxPermGen>
         <PermGen>64m</PermGen>
         <akka.version>2.3.7</akka.version>
