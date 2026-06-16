@@ -46,6 +46,7 @@ import org.janusgraph.graphdb.tinkerpop.JanusGraphIoRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -54,6 +55,7 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -119,80 +121,16 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
         return janusConfig;
     }
 
-    static {
-        addHBase2Support();
-
-        addSolr6Index();
-
-        addElasticSearch7Index();
-    }
-
-    private static void addHBase2Support() {
-        try {
-            Field field = StandardStoreManager.class.getDeclaredField("ALL_MANAGER_CLASSES");
-            field.setAccessible(true);
-
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
-            Map<String, String> customMap = new HashMap<>(StandardStoreManager.getAllManagerClasses());
-            customMap.put("hbase2", HBaseStoreManager.class.getName());
-            ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
-            field.set(null, immap);
-
-            LOG.debug("Injected HBase2 support - {}", HBaseStoreManager.class.getName());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void addSolr6Index() {
-        try {
-            Field field = StandardIndexProvider.class.getDeclaredField("ALL_MANAGER_CLASSES");
-            field.setAccessible(true);
-
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
-            Map<String, String> customMap = new HashMap<>(StandardIndexProvider.getAllProviderClasses());
-            customMap.put("solr", Solr6Index.class.getName());
-            ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
-            field.set(null, immap);
-
-            LOG.debug("Injected solr6 index - {}", Solr6Index.class.getName());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void addElasticSearch7Index() {
-        try {
-            Field field = StandardIndexProvider.class.getDeclaredField("ALL_MANAGER_CLASSES");
-            field.setAccessible(true);
-
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
-            Map<String, String> customMap = new HashMap<>(StandardIndexProvider.getAllProviderClasses());
-            customMap.put("elasticsearch", ElasticSearch7Index.class.getName());
-            ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
-            field.set(null, immap);
-
-            LOG.debug("Injected es7 index - {}", ElasticSearch7Index.class.getName());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
     public static JanusGraph getGraphInstance() {
-        if (graphInstance == null) {
+        JanusGraph me = graphInstance;
+
+        if (me == null) {
             synchronized (AtlasJanusGraphDatabase.class) {
-                if (graphInstance == null) {
+                me = graphInstance;
+
+                if (me == null) {
                     Configuration config;
+
                     try {
                         config = getConfiguration();
                     } catch (AtlasException e) {
@@ -204,30 +142,14 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
                     graphInstance      = initJanusGraph(config);
                     atlasGraphInstance = new AtlasJanusGraph();
 
-                    validateIndexBackend(config);
+                    me = graphInstance;
 
+                    validateIndexBackend(config);
                 }
             }
         }
-        return graphInstance;
-    }
 
-    @VisibleForTesting
-    static JanusGraph initJanusGraph(Configuration config) {
-
-        org.apache.commons.configuration2.Configuration conf2 = createConfiguration2(config);
-        try {
-            return JanusGraphFactory.open(conf2);
-        } catch (JanusGraphException e) {
-            LOG.warn("JanusGraphException: {}", e.getMessage());
-            if (e.getMessage().startsWith(OLDER_STORAGE_EXCEPTION)) {
-                LOG.info("Newer client is being used with older janus storage version. Setting allow-upgrade=true and reattempting connection");
-                config.addProperty("graph.allow-upgrade", true);
-                return JanusGraphFactory.open(conf2);
-            } else {
-                throw new RuntimeException(e);
-            }
-        }
+        return me;
     }
 
     public static void configureTxLogBasedIndexRecovery() {
@@ -236,17 +158,264 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
             long     ttl             = AtlasConfiguration.SOLR_INDEX_TX_LOG_TTL_CONF.getLong();
             Duration txLogTtlSecs    = Duration.ofSeconds(Duration.ofHours(ttl).getSeconds());
 
-            Map<String, Object> properties = new HashMap<String, Object>() {{
-                put(GRAPH_TX_LOG_CONF, recoveryEnabled);
-                put(GRAPH_TX_LOG_VERBOSE_CONF, recoveryEnabled);
-                put(GRAPH_TX_LOG_TTL_CONF, txLogTtlSecs);
-            }};
+            Map<String, Object> properties = new HashMap<>();
+
+            properties.put(GRAPH_TX_LOG_CONF, recoveryEnabled);
+            properties.put(GRAPH_TX_LOG_VERBOSE_CONF, recoveryEnabled);
+            properties.put(GRAPH_TX_LOG_TTL_CONF, txLogTtlSecs);
 
             updateGlobalConfiguration(properties);
 
             LOG.info("Tx Log-based Index Recovery: {}!", recoveryEnabled ? "Enabled" : "Disabled");
         } catch (Exception e) {
             LOG.error("Error: Failed!", e);
+        }
+    }
+
+    public static JanusGraph getBulkLoadingGraphInstance() {
+        try {
+            Configuration cfg = getConfiguration();
+
+            cfg.setProperty("storage.batch-loading", true);
+
+            org.apache.commons.configuration2.Configuration conf2 = createConfiguration2(cfg);
+
+            return JanusGraphFactory.open(conf2);
+        } catch (IllegalArgumentException | AtlasException ex) {
+            LOG.error("getBulkLoadingGraphInstance: Failed!", ex);
+        }
+
+        return null;
+    }
+
+    public static void unload() {
+        synchronized (AtlasJanusGraphDatabase.class) {
+            JanusGraph me = graphInstance;
+
+            if (me != null) {
+                me.tx().commit();
+                me.close();
+
+                graphInstance = null;
+            }
+        }
+    }
+
+    public static boolean isEmbeddedSolr() {
+        boolean ret = false;
+
+        try {
+            Configuration conf     = ApplicationProperties.get();
+            Object        property = conf.getProperty("atlas.graph.index.search.solr.embedded");
+
+            if (property instanceof String) {
+                ret = Boolean.parseBoolean((String) property);
+            }
+        } catch (AtlasException ignored) {
+            // ignore
+        }
+
+        return ret;
+    }
+
+    @VisibleForTesting
+    static JanusGraph initJanusGraph(Configuration config) {
+        org.apache.commons.configuration2.Configuration conf2 = createConfiguration2(config);
+
+        try {
+            return JanusGraphFactory.open(conf2);
+        } catch (JanusGraphException e) {
+            LOG.warn("JanusGraphException: {}", e.getMessage());
+
+            if (e.getMessage().startsWith(OLDER_STORAGE_EXCEPTION)) {
+                LOG.info("Newer client is being used with older janus storage version. Setting allow-upgrade=true and reattempting connection");
+
+                config.addProperty("graph.allow-upgrade", true);
+
+                return JanusGraphFactory.open(conf2);
+            } else {
+                throw new RuntimeException(e);
+            }
+        } catch (Exception e) {
+            LOG.error("Error: Error initializing graph");
+            throw e;
+        }
+    }
+
+    static void validateIndexBackend(Configuration config) {
+        JanusGraphManagement managementSystem = null;
+
+        try {
+            managementSystem = getGraphInstance().openManagement();
+
+            String configuredIndexBackend = config.getString(INDEX_BACKEND_CONF);
+            String currentIndexBackend    = managementSystem.get(INDEX_BACKEND_CONF);
+
+            if (!configuredIndexBackend.equals(currentIndexBackend)) {
+                throw new RuntimeException("Configured Index Backend " + configuredIndexBackend + " differs from earlier configured Index Backend " + currentIndexBackend + ". Aborting!");
+            }
+        } finally {
+            if (managementSystem != null) {
+                managementSystem.commit();
+            }
+        }
+    }
+
+    @Override
+    public boolean isGraphLoaded() {
+        return graphInstance != null;
+    }
+
+    @Override
+    public AtlasGraph<AtlasJanusVertex, AtlasJanusEdge> getGraph() {
+        getGraphInstance();
+
+        return atlasGraphInstance;
+    }
+
+    @Override
+    public AtlasGraph<AtlasJanusVertex, AtlasJanusEdge> getGraphBulkLoading() {
+        return new AtlasJanusGraph(getBulkLoadingGraphInstance());
+    }
+
+    @Override
+    public void initializeTestGraph() {
+        //nothing to do
+    }
+
+    @Override
+    public void cleanup() {
+        JanusGraph g = getGraphInstance();
+
+        try {
+            if (g != null) {
+                g.close();
+            }
+        } catch (Throwable t) {
+            LOG.warn("Could not close test JanusGraph", t);
+
+            t.printStackTrace();
+        }
+
+        try {
+            if (g != null) {
+                JanusGraphFactory.drop(g);
+            }
+        } catch (Throwable t) {
+            LOG.warn("Could not clear test JanusGraph", t);
+
+            t.printStackTrace();
+        }
+
+        if (isEmbeddedSolr()) {
+            try {
+                stopEmbeddedSolr();
+            } catch (Throwable t) {
+                LOG.warn("Could not stop local solr server", t);
+            }
+        }
+    }
+
+    private static void addHBase2Support() {
+        logArgs();
+        try {
+            Field field = StandardStoreManager.class.getDeclaredField("ALL_MANAGER_CLASSES");
+
+            field.setAccessible(true);
+
+            Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+            getDeclaredFields0.setAccessible(true);
+            Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
+            Field modifiersField = null;
+            for (Field each : fields) {
+                if ("modifiers".equals(each.getName())) {
+                    modifiersField = each;
+                    break;
+                }
+            }
+
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+            Map<String, String> customMap = new HashMap<>(StandardStoreManager.getAllManagerClasses());
+
+            customMap.put("hbase2", HBaseStoreManager.class.getName());
+
+            ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
+
+            field.set(null, immap);
+
+            LOG.debug("Injected HBase2 support - {}", HBaseStoreManager.class.getName());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void addSolr6Index() {
+        try {
+            Field field = StandardIndexProvider.class.getDeclaredField("ALL_MANAGER_CLASSES");
+
+            field.setAccessible(true);
+
+            Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+            getDeclaredFields0.setAccessible(true);
+            Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
+            Field modifiersField = null;
+            for (Field each : fields) {
+                if ("modifiers".equals(each.getName())) {
+                    modifiersField = each;
+                    break;
+                }
+            }
+
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+            Map<String, String> customMap = new HashMap<>(StandardIndexProvider.getAllProviderClasses());
+
+            customMap.put("solr", Solr6Index.class.getName());
+
+            ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
+
+            field.set(null, immap);
+
+            LOG.debug("Injected solr6 index - {}", Solr6Index.class.getName());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void addElasticSearch7Index() {
+        try {
+            Field field = StandardIndexProvider.class.getDeclaredField("ALL_MANAGER_CLASSES");
+
+            field.setAccessible(true);
+
+            Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+            getDeclaredFields0.setAccessible(true);
+            Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
+            Field modifiersField = null;
+            for (Field each : fields) {
+                if ("modifiers".equals(each.getName())) {
+                    modifiersField = each;
+                    break;
+                }
+            }
+
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+            Map<String, String> customMap = new HashMap<>(StandardIndexProvider.getAllProviderClasses());
+
+            customMap.put("elasticsearch", ElasticSearch7Index.class.getName());
+
+            ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
+
+            field.set(null, immap);
+
+            LOG.debug("Injected es7 index - {}", ElasticSearch7Index.class.getName());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -276,104 +445,10 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
         }
     }
 
-    public static JanusGraph getBulkLoadingGraphInstance() {
-        try {
-            Configuration cfg = getConfiguration();
-            cfg.setProperty("storage.batch-loading", true);
-
-            org.apache.commons.configuration2.Configuration conf2 = createConfiguration2(cfg);
-            return JanusGraphFactory.open(conf2);
-        } catch (IllegalArgumentException ex) {
-            LOG.error("getBulkLoadingGraphInstance: Failed!", ex);
-        } catch (AtlasException ex) {
-            LOG.error("getBulkLoadingGraphInstance: Failed!", ex);
-        }
-
-        return null;
-    }
-
     private static org.apache.commons.configuration2.Configuration createConfiguration2(Configuration conf) {
         Properties properties = ConfigurationConverter.getProperties(conf);
 
         return org.apache.commons.configuration2.ConfigurationConverter.getConfiguration(properties);
-    }
-
-    public static void unload() {
-        synchronized (AtlasJanusGraphDatabase.class) {
-
-            if (graphInstance == null) {
-                return;
-            }
-            graphInstance.tx().commit();
-            graphInstance.close();
-            graphInstance = null;
-        }
-    }
-
-    static void validateIndexBackend(Configuration config) {
-        String configuredIndexBackend = config.getString(INDEX_BACKEND_CONF);
-
-        JanusGraphManagement managementSystem = getGraphInstance().openManagement();
-        String currentIndexBackend = managementSystem.get(INDEX_BACKEND_CONF);
-        managementSystem.commit();
-
-        if (!configuredIndexBackend.equals(currentIndexBackend)) {
-            throw new RuntimeException("Configured Index Backend " + configuredIndexBackend
-                    + " differs from earlier configured Index Backend " + currentIndexBackend + ". Aborting!");
-        }
-
-    }
-
-    @Override
-    public boolean isGraphLoaded() {
-        return graphInstance != null;
-    }
-
-    @Override
-    public void initializeTestGraph() {
-        //nothing to do
-
-    }
-
-    @Override
-    public void cleanup() {
-        JanusGraph g = getGraphInstance();
-        try {
-            if(g != null) {
-                g.close();
-            }
-        } catch (Throwable t) {
-            LOG.warn("Could not close test JanusGraph", t);
-            t.printStackTrace();
-        }
-
-        try {
-            if(g != null) {
-                JanusGraphFactory.drop(g);
-            }
-        } catch (Throwable t) {
-            LOG.warn("Could not clear test JanusGraph", t);
-            t.printStackTrace();
-        }
-
-        if (isEmbeddedSolr()) {
-            try {
-                stopEmbeddedSolr();
-            } catch (Throwable t) {
-                LOG.warn("Could not stop local solr server", t);
-            }
-        }
-    }
-
-    @Override
-    public AtlasGraph<AtlasJanusVertex, AtlasJanusEdge> getGraph() {
-        getGraphInstance();
-        return atlasGraphInstance;
-    }
-
-    @Override
-    public AtlasGraph<AtlasJanusVertex, AtlasJanusEdge> getGraphBulkLoading() {
-        return new AtlasJanusGraph(getBulkLoadingGraphInstance());
     }
 
     private static void startEmbeddedSolr() throws AtlasException {
@@ -410,18 +485,17 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
         LOG.info("<== stopEmbeddedSolr()");
     }
 
-    public static boolean isEmbeddedSolr() {
-        boolean ret = false;
+    static {
+        addHBase2Support();
 
-        try {
-            Configuration conf     = ApplicationProperties.get();
-            Object        property = conf.getProperty("atlas.graph.index.search.solr.embedded");
+        addSolr6Index();
 
-            if (property != null && property instanceof String) {
-                ret = Boolean.valueOf((String) property);
-            }
-        } catch (AtlasException ignored) { }
+        addElasticSearch7Index();
+    }
 
-        return ret;
+    public static void logArgs() {
+        List<String> jvmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments();
+        System.out.println("JVM Args:");
+        jvmArgs.forEach(System.out::println);
     }
 }

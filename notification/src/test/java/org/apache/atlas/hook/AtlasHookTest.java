@@ -35,7 +35,7 @@ import java.util.List;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 
 public class AtlasHookTest {
@@ -106,7 +106,7 @@ public class AtlasHookTest {
         AtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, false,
                 failedMessagesLogger, source);
 
-        verifyZeroInteractions(failedMessagesLogger);
+        verifyNoInteractions(failedMessagesLogger);
     }
 
     @Test
@@ -136,6 +136,6 @@ public class AtlasHookTest {
         AtlasHook.notifyEntitiesInternal(hookNotifications, 2, null, notificationInterface, true,
                 failedMessagesLogger, source);
 
-        verifyZeroInteractions(failedMessagesLogger);
+        verifyNoInteractions(failedMessagesLogger);
     }
 }
