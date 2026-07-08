@@ -77,7 +77,6 @@
     </modules>
 
     <properties>
-        <odp.release.version>3.3.6.5-SNAPSHOT</odp.release.version>
         <MaxPermGen>512m</MaxPermGen>
         <PermGen>64m</PermGen>
         <akka.version>2.3.7</akka.version>
@@ -154,6 +153,7 @@
         <netty.version>4.1.108.Final</netty.version>
         <node-for-v2.version>v12.16.0</node-for-v2.version>
         <npm-for-v2.version>6.13.7</npm-for-v2.version>
+        <odp.release.version>3.3.6.5-SNAPSHOT</odp.release.version>
         <okio.version>3.4.0</okio.version>
         <opencsv.version>5.0</opencsv.version>
         <paranamer.version>2.7</paranamer.version>
@@ -188,19 +188,6 @@
         <woodstox-core.version>5.0.3</woodstox-core.version>
         <zookeeper.version>3.9.2</zookeeper.version>
     </properties>
-
-    <distributionManagement>
-        <repository>
-            <id>nexus-releases</id>
-            <name>Releases</name>
-            <url>https://repo1.acceldata.dev/repository/odp-staging-release/</url>
-        </repository>
-        <snapshotRepository>
-            <id>nexus-snapshots</id>
-            <name>Snapshot</name>
-            <url>https://repo1.acceldata.dev/repository/odp-staging-snapshot/</url>
-        </snapshotRepository>
-    </distributionManagement>
 
     <dependencyManagement>
         <dependencies>
@@ -2306,6 +2293,19 @@
             <url>https://repo1.acceldata.dev/repository/odp-central/</url>
         </repository>
     </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>nexus-releases</id>
+            <name>Releases</name>
+            <url>https://repo1.acceldata.dev/repository/odp-staging-release/</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus-snapshots</id>
+            <name>Snapshot</name>
+            <url>https://repo1.acceldata.dev/repository/odp-staging-snapshot/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <profiles>
         <profile>
