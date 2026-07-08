@@ -57,6 +57,8 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 public class BasicSearchIT extends BaseResourceIT {
+    private static final String IMPORTED_DATA_QUALIFIED_NAME_MARKER = "default.";
+
     private AtlasUserSavedSearch userSavedSearch;
 
     @BeforeClass
@@ -334,6 +336,42 @@ public class BasicSearchIT extends BaseResourceIT {
 
     private boolean containsAnyAttributeValue(SearchParameters.FilterCriteria filter) {
         return containsAnyMatchingCriteria(filter, fc -> StringUtils.isBlank(fc.getAttributeValue()));
+    }
+
+    private SearchParameters scopeToImportedDataset(SearchParameters parameters) {
+        if (parameters == null || parameters.getTypeName() == null) {
+            return parameters;
+        }
+
+        String typeName = parameters.getTypeName();
+
+        if (!"hive_table".equals(typeName) && !"hive_column".equals(typeName)) {
+            return parameters;
+        }
+
+        if (StringUtils.isNotBlank(parameters.getQuery()) || parameters.getOffset() > 0) {
+            return parameters;
+        }
+
+        SearchParameters.FilterCriteria importedDataFilter = new SearchParameters.FilterCriteria();
+
+        importedDataFilter.setAttributeName("qualifiedName");
+        importedDataFilter.setOperator(SearchParameters.Operator.CONTAINS);
+        importedDataFilter.setAttributeValue(IMPORTED_DATA_QUALIFIED_NAME_MARKER);
+
+        SearchParameters.FilterCriteria scopedFilter = new SearchParameters.FilterCriteria();
+
+        scopedFilter.setCondition(SearchParameters.FilterCriteria.Condition.AND);
+
+        if (parameters.getEntityFilters() != null) {
+            scopedFilter.setCriterion(Arrays.asList(importedDataFilter, parameters.getEntityFilters()));
+        } else {
+            scopedFilter.setCriterion(Collections.singletonList(importedDataFilter));
+        }
+
+        parameters.setEntityFilters(scopedFilter);
+
+        return parameters;
     }
 
     @Test(dependsOnMethods = "testSavedSearch")
