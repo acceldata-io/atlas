@@ -140,6 +140,7 @@
         <jetty-maven-plugin.stopWait>10</jetty-maven-plugin.stopWait>
         <jetty.version>9.4.57.v20241219</jetty.version>
         <joda-time.version>2.10.6</joda-time.version>
+        <jose4j.version>0.9.6</jose4j.version>
         <json-simple.version>1.1.1</json-simple.version>
         <json.version>3.2.11</json.version>
         <jsr.version>1.1</jsr.version>
@@ -875,6 +876,12 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.bitbucket.b_c</groupId>
+                <artifactId>jose4j</artifactId>
+                <version>${jose4j.version}</version>
             </dependency>
 
             <!-- JSON -->
