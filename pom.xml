@@ -120,7 +120,7 @@
         <hadoop.hdfs-client.version>${hadoop.version}</hadoop.hdfs-client.version>
         <hadoop.version>3.3.6.${odp.release.version}</hadoop.version>
         <hbase.version>2.5.0</hbase.version>
-        <hive.version>4.0.1.${odp.release.version}</hive.version>
+        <hive.version>4.1.0.${odp.release.version}</hive.version>
         <hppc.version>0.8.1</hppc.version>
         <httpcomponents-httpclient.version>4.5.13</httpcomponents-httpclient.version>
         <httpcomponents-httpcore.version>4.4.13</httpcomponents-httpcore.version>
