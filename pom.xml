@@ -1238,9 +1238,9 @@
                 </plugin>
 
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>3.0.5</version>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>4.7.3.6</version>
                 </plugin>
 
                 <!-- Source code metrics: mvn javancss:report or mvn site -->
@@ -1593,17 +1593,16 @@
             </plugin>
 
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
                 <configuration>
-                    <!--debug>true</debug -->
                     <xmlOutput>true</xmlOutput>
                     <failOnError>false</failOnError>
                     <skip>${skipCheck}</skip>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>findbugs-check</id>
+                        <id>spotbugs-check</id>
                         <goals>
                             <goal>check</goal>
                         </goals>
