@@ -27,7 +27,7 @@
 
     <groupId>org.apache.atlas</groupId>
     <artifactId>apache-atlas</artifactId>
-    <version>2.4.0.3.3.6.5-SNAPSHOT</version>
+    <version>2.4.0.3.3.6.6-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>apache-atlas</name>
@@ -77,7 +77,7 @@
     </modules>
 
     <properties>
-        <odp.release.version>3.3.6.5-SNAPSHOT</odp.release.version>
+        <odp.release.version>3.3.6.6-SNAPSHOT</odp.release.version>
         <MaxPermGen>512m</MaxPermGen>
         <PermGen>64m</PermGen>
         <akka.version>2.3.7</akka.version>
@@ -158,7 +158,7 @@
         <netty.version>4.1.135.Final</netty.version>
         <node-for-v2.version>v12.16.0</node-for-v2.version>
         <npm-for-v2.version>6.13.7</npm-for-v2.version>
-        <odp.release.version>3.3.6.5-SNAPSHOT</odp.release.version>
+        <odp.release.version>3.3.6.6-SNAPSHOT</odp.release.version>
         <okio.version>3.4.0</okio.version>
         <opencsv.version>5.0</opencsv.version>
         <paranamer.version>2.7</paranamer.version>
