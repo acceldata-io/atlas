@@ -90,6 +90,7 @@
         <calcite.version>1.16.0</calcite.version>
         <checkstyle.failOnViolation>false</checkstyle.failOnViolation>
         <codehaus.woodstox.stax2-api.version>3.1.4</codehaus.woodstox.stax2-api.version>
+        <commons-beanutils.version>1.11.0</commons-beanutils.version>
         <commons-cli.version>1.4</commons-cli.version>
         <commons-codec.version>1.14</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
@@ -97,6 +98,7 @@
         <commons-conf.version>1.10</commons-conf.version>
         <commons-conf2.version>2.10.1</commons-conf2.version>
         <commons-el.version>1.0</commons-el.version>
+        <commons-fileupload.version>1.6.0</commons-fileupload.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-logging.version>1.1.3</commons-logging.version>
@@ -119,13 +121,13 @@
         <hadoop.hdfs-client.version>${hadoop.version}</hadoop.hdfs-client.version>
         <hadoop.version>3.3.6.${odp.release.version}</hadoop.version>
         <hbase.version>2.5.0</hbase.version>
-        <hive.version>4.0.1.${odp.release.version}</hive.version>
+        <hive.version>4.1.0.${odp.release.version}</hive.version>
         <hppc.version>0.8.1</hppc.version>
         <httpcomponents-httpclient.version>4.5.13</httpcomponents-httpclient.version>
         <httpcomponents-httpcore.version>4.4.13</httpcomponents-httpcore.version>
         <ivy.version>2.5.2</ivy.version>
-        <jackson.databind.version>2.17.2</jackson.databind.version>
-        <jackson.version>2.17.2</jackson.version>
+        <jackson.databind.version>2.18.8</jackson.databind.version>
+        <jackson.version>2.18.8</jackson.version>
         <janusgraph.cassandra.version>0.5.3</janusgraph.cassandra.version>
         <janusgraph.version>1.1.0</janusgraph.version>
         <java.version.required>1.8</java.version.required>
@@ -138,22 +140,25 @@
         <jersey.version>1.19.4</jersey.version>
         <jettison.version>1.5.4</jettison.version>
         <jetty-maven-plugin.stopWait>10</jetty-maven-plugin.stopWait>
-        <jetty.version>9.4.56.v20240826</jetty.version>
+        <jetty.version>9.4.57.v20241219</jetty.version>
         <joda-time.version>2.10.6</joda-time.version>
+        <jose4j.version>0.9.6</jose4j.version>
         <json-simple.version>1.1.1</json-simple.version>
         <json.version>3.2.11</json.version>
         <jsr.version>1.1</jsr.version>
         <junit.version>4.13.2</junit.version>
         <kafka.scala.binary.version>2.12</kafka.scala.binary.version>
         <kafka.version>2.8.2</kafka.version>
-        <keycloak.version>6.0.1</keycloak.version>
+        <keycloak.version>7.0.0</keycloak.version>
+        <log4j2.version>2.25.4</log4j2.version>
         <logback.version>1.3.14</logback.version>
         <lucene-solr.version>8.11.3</lucene-solr.version>
         <maven-plugin-sortpom.version>3.0.1</maven-plugin-sortpom.version>
         <maven-site-plugin.version>3.7</maven-site-plugin.version>
-        <netty.version>4.1.108.Final</netty.version>
+        <netty.version>4.1.135.Final</netty.version>
         <node-for-v2.version>v12.16.0</node-for-v2.version>
         <npm-for-v2.version>6.13.7</npm-for-v2.version>
+        <odp.release.version>3.3.6.5-SNAPSHOT</odp.release.version>
         <okio.version>3.4.0</okio.version>
         <opencsv.version>5.0</opencsv.version>
         <paranamer.version>2.7</paranamer.version>
@@ -351,6 +356,12 @@
             </dependency>
 
             <dependency>
+                <groupId>commons-beanutils</groupId>
+                <artifactId>commons-beanutils</artifactId>
+                <version>${commons-beanutils.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>commons-cli</groupId>
                 <artifactId>commons-cli</artifactId>
                 <version>${commons-cli.version}</version>
@@ -373,6 +384,12 @@
                 <groupId>commons-el</groupId>
                 <artifactId>commons-el</artifactId>
                 <version>${commons-el.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-fileupload</groupId>
+                <artifactId>commons-fileupload</artifactId>
+                <version>${commons-fileupload.version}</version>
             </dependency>
 
             <dependency>
@@ -853,9 +870,39 @@
             </dependency>
 
             <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-1.2-api</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.bitbucket.b_c</groupId>
+                <artifactId>jose4j</artifactId>
+                <version>${jose4j.version}</version>
             </dependency>
 
             <!-- JSON -->
@@ -1205,9 +1252,9 @@
                 </plugin>
 
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>3.0.5</version>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>4.7.3.6</version>
                 </plugin>
 
                 <!-- Source code metrics: mvn javancss:report or mvn site -->
@@ -1560,17 +1607,16 @@
             </plugin>
 
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
                 <configuration>
-                    <!--debug>true</debug -->
                     <xmlOutput>true</xmlOutput>
                     <failOnError>false</failOnError>
                     <skip>${skipCheck}</skip>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>findbugs-check</id>
+                        <id>spotbugs-check</id>
                         <goals>
                             <goal>check</goal>
                         </goals>
@@ -2306,6 +2352,19 @@
             <url>https://repo1.acceldata.dev/repository/odp-central/</url>
         </repository>
     </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>nexus-releases</id>
+            <name>Releases</name>
+            <url>https://repo1.acceldata.dev/repository/odp-staging-release/</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus-snapshots</id>
+            <name>Snapshot</name>
+            <url>https://repo1.acceldata.dev/repository/odp-staging-snapshot/</url>
+        </snapshotRepository>
+    </distributionManagement>
 
     <profiles>
         <profile>
