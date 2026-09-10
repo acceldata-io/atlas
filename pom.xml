@@ -171,7 +171,7 @@
         <paranamer.version>2.7</paranamer.version>
         <poi-ooxml.version>5.4.0</poi-ooxml.version>
         <poi.version>5.4.0</poi.version>
-        <postgresql.version>42.7.7</postgresql.version>
+        <postgresql.version>42.7.12</postgresql.version>
         <project.build.dashboard.gruntBuild>run build</project.build.dashboard.gruntBuild>
         <project.build.dashboardv2.gruntBuild>build-minify</project.build.dashboardv2.gruntBuild>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
