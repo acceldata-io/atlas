@@ -127,6 +127,7 @@
         <ivy.version>2.5.2</ivy.version>
         <jackson.databind.version>2.21.4</jackson.databind.version>
         <jackson.version>2.21.4</jackson.version>
+        <jackson-annotations.version>2.21</jackson-annotations.version>
         <janusgraph.cassandra.version>0.5.3</janusgraph.cassandra.version>
         <janusgraph.version>1.1.0</janusgraph.version>
         <java.version.required>1.8</java.version.required>
