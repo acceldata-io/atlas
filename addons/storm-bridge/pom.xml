@@ -536,7 +536,7 @@
                                         <artifactItem>
                                             <groupId>com.fasterxml.jackson.core</groupId>
                                             <artifactId>jackson-annotations</artifactId>
-                                            <version>${jackson.version}</version>
+                                            <version>${jackson-annotations.version}</version>
                                         </artifactItem>
                                         <dependency>
                                             <groupId>org.codehaus.woodstox</groupId>
