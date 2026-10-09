@@ -18,32 +18,35 @@
 
 package org.apache.atlas.notification;
 
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasBaseClient;
 import org.apache.atlas.AtlasClientV2;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.kafka.NotificationProvider;
 import org.apache.atlas.notification.rest.RestNotification;
 import org.apache.commons.configuration2.Configuration;
-import org.mockito.Matchers;
+import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.apache.atlas.kafka.KafkaNotification.ATLAS_HOOK_TOPIC;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
@@ -54,10 +57,10 @@ public class RestNotificationTest {
     private Configuration conf;
 
     @Mock
-    private WebResource service;
+    private WebTarget service;
 
     @Mock
-    private WebResource.Builder resourceBuilderMock;
+    private Invocation.Builder resourceBuilderMock;
 
     @BeforeClass
     public void setup() throws Exception {
@@ -72,23 +75,6 @@ public class RestNotificationTest {
 
     }
 
-    private WebResource.Builder setupBuilder(AtlasClientV2.API api, WebResource webResource) {
-        when(webResource.path(api.getPath())).thenReturn(service);
-        when(webResource.path(api.getNormalizedPath())).thenReturn(service);
-
-        return getBuilder(service);
-    }
-
-    private WebResource.Builder getBuilder(WebResource resourceObject) {
-        when(resourceObject.getRequestBuilder()).thenReturn(resourceBuilderMock);
-        when(resourceObject.path(anyString())).thenReturn(resourceObject);
-        when(resourceBuilderMock.accept(MediaType.APPLICATION_JSON)).thenReturn(resourceBuilderMock);
-        when(resourceBuilderMock.type(MediaType.MULTIPART_FORM_DATA)).thenReturn(resourceBuilderMock);
-        when(resourceBuilderMock.type(MediaType.APPLICATION_JSON + "; charset=UTF-8")).thenReturn(resourceBuilderMock);
-
-        return resourceBuilderMock;
-    }
-
     @Test
     public void testNotificationProvider () throws Exception {
         assertEquals(notifier.getClass(), RestNotification.class);
@@ -98,11 +84,11 @@ public class RestNotificationTest {
     public void testPostNotificationToTopic () throws Exception {
         AtlasClientV2       client   = new AtlasClientV2(service, conf);
         AtlasBaseClient.API api      = client.formatPathWithParameter(AtlasClientV2.API_V2.POST_NOTIFICATIONS_TO_TOPIC, ATLAS_HOOK_TOPIC);
-        WebResource.Builder builder  = setupBuilder(api, service);
-        ClientResponse      response = mock(ClientResponse.class);
+        Invocation.Builder builder  = setupBuilder(api, service);
+        Response      response = mock(Response.class);
 
         when(response.getStatus()).thenReturn(Response.Status.NO_CONTENT.getStatusCode());
-        when(builder.method(anyString(), Matchers.<Class>any(), anyList())).thenReturn(response);
+        when(builder.method(anyString(), (Entity<?>) anyObject())).thenReturn(response);
 
         ((RestNotification)notifier).atlasClientV2 = client;
 
@@ -117,12 +103,12 @@ public class RestNotificationTest {
     public void testNotificationException () throws Exception {
         AtlasClientV2       client   = new AtlasClientV2(service, conf);
         AtlasBaseClient.API api      = client.formatPathWithParameter(AtlasClientV2.API_V2.POST_NOTIFICATIONS_TO_TOPIC, ATLAS_HOOK_TOPIC);
-        WebResource.Builder builder  = setupBuilder(api, service);
-        ClientResponse      response = mock(ClientResponse.class);
+        Invocation.Builder builder  = setupBuilder(api, service);
+        Response      response = mock(Response.class);
 
         when(response.getStatus()).thenReturn(AtlasErrorCode.NOTIFICATION_EXCEPTION.getHttpCode().getStatusCode());
-        when(response.getEntity(String.class)).thenReturn(AtlasErrorCode.NOTIFICATION_EXCEPTION.getErrorCode());
-        when(builder.method(anyString(), Matchers.<Class>any(), anyList())).thenReturn(response);
+        when(response.readEntity((Class<String>) anyObject())).thenReturn(AtlasErrorCode.NOTIFICATION_EXCEPTION.getErrorCode());
+        when(builder.method(anyString(), (Entity<?>) anyObject())).thenReturn(response);
 
         ((RestNotification)notifier).atlasClientV2 = client;
 
@@ -131,6 +117,64 @@ public class RestNotificationTest {
         } catch (NotificationException e) {
             Assert.assertTrue(e.getMessage().contains(AtlasErrorCode.NOTIFICATION_EXCEPTION.getErrorCode()));
         }
+    }
+
+    private Invocation.Builder setupBuilder(AtlasClientV2.API api, WebTarget webResource) {
+        when(webResource.path(api.getPath())).thenReturn(service);
+        when(webResource.path(api.getNormalizedPath())).thenReturn(service);
+
+        return getBuilder(service);
+    }
+
+    private Invocation.Builder getBuilder(WebTarget resourceObject) {
+        when(resourceObject.request()).thenReturn(resourceBuilderMock);
+        when(resourceObject.path(anyString())).thenReturn(resourceObject);
+        when(resourceBuilderMock.accept(MediaType.APPLICATION_JSON)).thenReturn(resourceBuilderMock);
+        when(resourceBuilderMock.accept(MediaType.MULTIPART_FORM_DATA)).thenReturn(resourceBuilderMock);
+        when(resourceBuilderMock.accept(MediaType.APPLICATION_JSON + "; charset=UTF-8")).thenReturn(resourceBuilderMock);
+
+        return resourceBuilderMock;
+    }
+
+    @Test
+    public void testRestNotificationEndpointPrefersHookRestAddress() throws Exception {
+        Configuration localConf = new PropertiesConfiguration();
+        localConf.setProperty("atlas.hook.rest.notification.address", "http://atlas-rest.example.com:41000/rest");
+        localConf.setProperty("atlas.rest.address", "http://atlas-main.example.com:21000");
+        localConf.setProperty("atlas.rest.basic.auth.username", "admin");
+        localConf.setProperty("atlas.rest.basic.auth.password", "admin123");
+
+        RestNotification restNotification = new RestNotification(localConf);
+
+        String[] configuredEndpoints = getConfiguredBaseUrls(restNotification.atlasClientV2);
+
+        assertEquals(configuredEndpoints.length, 1);
+        assertEquals(configuredEndpoints[0], "http://atlas-rest.example.com:41000/rest");
+    }
+
+    private String[] getConfiguredBaseUrls(AtlasClientV2 client) throws Exception {
+        Field atlasServerEnsembleField = AtlasBaseClient.class.getDeclaredField("atlasServerEnsemble");
+        atlasServerEnsembleField.setAccessible(true);
+        Object atlasServerEnsemble = atlasServerEnsembleField.get(client);
+
+        if (atlasServerEnsemble == null) {
+            return new String[0];
+        }
+
+        Field membersField = atlasServerEnsemble.getClass().getDeclaredField("members");
+        membersField.setAccessible(true);
+        String[] members = (String[]) membersField.get(atlasServerEnsemble);
+
+        return members;
+    }
+
+    @Test(expectedExceptions = AtlasException.class)
+    public void testRestNotificationFailsFastWhenHookAddressNotConfigured() throws Exception {
+        Configuration localConf = new PropertiesConfiguration();
+        localConf.setProperty("atlas.rest.basic.auth.username", "admin");
+        localConf.setProperty("atlas.rest.basic.auth.password", "admin123");
+
+        new RestNotification(localConf);
     }
 
 }

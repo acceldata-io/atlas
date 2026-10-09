@@ -16,9 +16,6 @@
  */
 package org.apache.atlas.security;
 
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
-import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
 import org.apache.atlas.AtlasException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -30,6 +27,8 @@ import org.apache.hadoop.security.ssl.SSLFactory;
 import org.apache.hadoop.security.token.delegation.web.DelegationTokenAuthenticatedURL;
 import org.apache.hadoop.security.token.delegation.web.DelegationTokenAuthenticator;
 import org.apache.hadoop.security.token.delegation.web.KerberosDelegationTokenAuthenticator;
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.HttpUrlConnectorProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +57,14 @@ public class SecureClientUtils {
     public final static int DEFAULT_SOCKET_TIMEOUT_IN_MSECS = 1 * 60 * 1000; // 1 minute
     private static final Logger LOG = LoggerFactory.getLogger(SecureClientUtils.class);
 
+    private static final ConnectionConfigurator DEFAULT_TIMEOUT_CONN_CONFIGURATOR = new ConnectionConfigurator() {
+        @Override
+        public HttpURLConnection configure(HttpURLConnection conn) throws IOException {
+            setTimeouts(conn, DEFAULT_SOCKET_TIMEOUT_IN_MSECS);
+            return conn;
+        }
+    };
+
     private SSLFactory factory;
 
     public static void persistSSLClientConfiguration(org.apache.commons.configuration2.Configuration clientConfig, String confLocation) throws AtlasException, IOException {
@@ -83,19 +90,22 @@ public class SecureClientUtils {
         }
     }
 
-    public URLConnectionClientHandler getClientConnectionHandler(DefaultClientConfig config, org.apache.commons.configuration2.Configuration clientConfig, String doAsUser, final UserGroupInformation ugi) {
-        config.getProperties().put(URLConnectionClientHandler.PROPERTY_HTTP_URL_CONNECTION_SET_METHOD_WORKAROUND, true);
+    public HttpUrlConnectorProvider.ConnectionFactory getClientConnectionHandler(ClientConfig config, org.apache.commons.configuration2.Configuration clientConfig, String doAsUser, final UserGroupInformation ugi) {
+        config.getProperties().put(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true);
+
         Configuration conf = new Configuration();
         conf.addResource(conf.get(SSLFactory.SSL_CLIENT_CONF_KEY, SecurityProperties.SSL_CLIENT_PROPERTIES));
         UserGroupInformation.setConfiguration(conf);
         final ConnectionConfigurator connConfigurator = newConnConfigurator(conf);
 
-        Authenticator authenticator = new KerberosDelegationTokenAuthenticator();
+        DelegationTokenAuthenticator authenticator = new KerberosDelegationTokenAuthenticator();
 
         authenticator.setConnectionConfigurator(connConfigurator);
-        final DelegationTokenAuthenticator finalAuthenticator = (DelegationTokenAuthenticator) authenticator;
-        final DelegationTokenAuthenticatedURL.Token token = new DelegationTokenAuthenticatedURL.Token();
-        HttpURLConnectionFactory httpURLConnectionFactory = null;
+
+        final DelegationTokenAuthenticator          finalAuthenticator       = authenticator;
+        final DelegationTokenAuthenticatedURL.Token token                    = new DelegationTokenAuthenticatedURL.Token();
+        HttpUrlConnectorProvider.ConnectionFactory                    httpURLConnectionFactory = null;
+
         try {
             UserGroupInformation ugiToUse = ugi != null ? ugi : UserGroupInformation.getCurrentUser();
             final UserGroupInformation actualUgi =
@@ -108,27 +118,24 @@ public class SecureClientUtils {
 
             LOG.info("doAsUser: {}", doAsUser);
             final String finalDoAsUser = doAsUser;
-            httpURLConnectionFactory = new HttpURLConnectionFactory() {
-                @Override
-                public HttpURLConnection getHttpURLConnection(final URL url) throws IOException {
-                    try {
-                        return actualUgi.doAs(new PrivilegedExceptionAction<HttpURLConnection>() {
-                            @Override
-                            public HttpURLConnection run() throws Exception {
-                                try {
-                                    return new DelegationTokenAuthenticatedURL(finalAuthenticator, connConfigurator)
-                                        .openConnection(url, token, finalDoAsUser);
-                                } catch (Exception e) {
-                                    throw new IOException(e);
-                                }
+            httpURLConnectionFactory = (url) -> {
+                try {
+                    return actualUgi.doAs(new PrivilegedExceptionAction<HttpURLConnection>() {
+                        @Override
+                        public HttpURLConnection run() throws Exception {
+                            try {
+                                return new DelegationTokenAuthenticatedURL(finalAuthenticator, connConfigurator)
+                                    .openConnection(url, token, finalDoAsUser);
+                            } catch (Exception e) {
+                                throw new IOException(e);
                             }
-                        });
-                    } catch (Exception e) {
-                        if (e instanceof IOException) {
-                            throw (IOException) e;
-                        } else {
-                            throw new IOException(e);
                         }
+                    });
+                } catch (Exception e) {
+                    if (e instanceof IOException) {
+                        throw (IOException) e;
+                    } else {
+                        throw new IOException(e);
                     }
                 }
             };
@@ -136,16 +143,39 @@ public class SecureClientUtils {
             LOG.warn("Error obtaining user", e);
         }
 
-        return new URLConnectionClientHandler(httpURLConnectionFactory);
+        return httpURLConnectionFactory;
     }
 
-    private final static ConnectionConfigurator DEFAULT_TIMEOUT_CONN_CONFIGURATOR = new ConnectionConfigurator() {
-        @Override
-        public HttpURLConnection configure(HttpURLConnection conn) throws IOException {
-            setTimeouts(conn, DEFAULT_SOCKET_TIMEOUT_IN_MSECS);
-            return conn;
-        }
-    };
+    public HttpUrlConnectorProvider.ConnectionFactory getUrlConnectionClientHandler() {
+        return (url) -> {
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            if (connection instanceof HttpsURLConnection) {
+                LOG.debug("Attempting to configure HTTPS connection using client configuration");
+
+                try {
+                    Configuration conf = new Configuration();
+
+                    conf.addResource(conf.get(SSLFactory.SSL_CLIENT_CONF_KEY, SecurityProperties.SSL_CLIENT_PROPERTIES));
+
+                    UserGroupInformation.setConfiguration(conf);
+
+                    HttpsURLConnection c = (HttpsURLConnection) connection;
+
+                    final SSLFactory       factory = getSSLFactory(conf);
+                    final SSLSocketFactory sf      = factory.createSSLSocketFactory();
+                    final HostnameVerifier hv      = factory.getHostnameVerifier();
+
+                    c.setSSLSocketFactory(sf);
+                    c.setHostnameVerifier(hv);
+                } catch (Exception e) {
+                    LOG.info("Unable to configure HTTPS connection from configuration. Leveraging JDK properties.");
+                }
+            }
+
+            return connection;
+        };
+    }
 
     private  ConnectionConfigurator newConnConfigurator(Configuration conf) {
         try {
@@ -219,40 +249,5 @@ public class SecureClientUtils {
             throw new AtlasException("Failed to find client configuration directory", e);
         }
         return new File(sslDir, SecurityProperties.SSL_CLIENT_PROPERTIES);
-    }
-
-    public  URLConnectionClientHandler getUrlConnectionClientHandler() {
-        return new URLConnectionClientHandler(new HttpURLConnectionFactory() {
-            @Override
-            public HttpURLConnection getHttpURLConnection(URL url)
-                    throws IOException {
-                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-
-                if (connection instanceof HttpsURLConnection) {
-                    LOG.debug("Attempting to configure HTTPS connection using client "
-                            + "configuration");
-                    final SSLFactory factory;
-                    final SSLSocketFactory sf;
-                    final HostnameVerifier hv;
-
-                    try {
-                        Configuration conf = new Configuration();
-                        conf.addResource(conf.get(SSLFactory.SSL_CLIENT_CONF_KEY, SecurityProperties.SSL_CLIENT_PROPERTIES));
-                        UserGroupInformation.setConfiguration(conf);
-
-                        HttpsURLConnection c = (HttpsURLConnection) connection;
-                        factory = getSSLFactory(conf);
-                        sf = factory.createSSLSocketFactory();
-                        hv = factory.getHostnameVerifier();
-                        c.setSSLSocketFactory(sf);
-                        c.setHostnameVerifier(hv);
-                    } catch (Exception e) {
-                        LOG.info("Unable to configure HTTPS connection from "
-                                + "configuration.  Leveraging JDK properties.");
-                    }
-                }
-                return connection;
-            }
-        });
     }
 }

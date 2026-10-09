@@ -17,11 +17,12 @@
  */
 package org.apache.atlas.web.integration;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import org.apache.atlas.AtlasClientV2;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.utils.TestResourceFileUtils;
 import org.testng.annotations.Test;
+
+import javax.ws.rs.core.Response;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,6 +32,8 @@ import java.util.Date;
 import static org.apache.atlas.kafka.KafkaNotification.ATLAS_HOOK_TOPIC;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 public class NotificationRestIT extends BaseResourceIT {
 
@@ -57,16 +60,12 @@ public class NotificationRestIT extends BaseResourceIT {
         try {
             atlasClientV2.postNotificationToTopic(ATLAS_HOOK_TOPIC, new ArrayList<String>(Arrays.asList(notificationString)));
 
-            waitFor(MAX_WAIT_TIME, new Predicate() {
-                @Override
-                public boolean evaluate() throws Exception {
-                    ArrayNode results = searchByDSL(String.format("%s where qualifiedName='%s'", DATABASE_TYPE_BUILTIN, qualifiedName));
+            fail("Expected notification POST to fail — endpoint removed from main webapp (ATLAS-5377)");
+        } catch (AtlasServiceException e) {
+            assertNotNull(e.getStatus(), "expected HTTP error when posting to removed endpoint");
 
-                    return results.size() == 1;
-                }
-            });
-        } catch(AtlasServiceException e) {
-            assertNull(e.getStatus(), "expected no server error code in the status");
+            assertTrue(e.getStatus().getStatusCode() != Response.Status.NO_CONTENT.getStatusCode(),
+                    "notification POST must not return 204 on main webapp");
         }
 
     }

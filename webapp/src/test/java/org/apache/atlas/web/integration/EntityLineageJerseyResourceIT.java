@@ -19,7 +19,6 @@
 package org.apache.atlas.web.integration;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 import org.apache.atlas.AtlasBaseClient;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
@@ -31,6 +30,7 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.*;
@@ -64,7 +64,8 @@ public class EntityLineageJerseyResourceIT extends DataSetLineageJerseyResourceI
         String tableId = atlasClientV1.getEntity(HIVE_TABLE_TYPE,
                 AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, salesMonthlyTable).getId()._getId();
 
-        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap();
+
         queryParams.add(DIRECTION_PARAM, INPUT_DIRECTION);
         queryParams.add(DEPTH_PARAM, "5");
         ObjectNode response = atlasClientV1.callAPI(LINEAGE_V2_API, ObjectNode.class, queryParams, tableId);
@@ -92,7 +93,8 @@ public class EntityLineageJerseyResourceIT extends DataSetLineageJerseyResourceI
         String tableId = atlasClientV1.getEntity(HIVE_TABLE_TYPE,
                 AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, salesFactTable).getId()._getId();
 
-        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap();
+
         queryParams.add(DIRECTION_PARAM, OUTPUT_DIRECTION);
         queryParams.add(DEPTH_PARAM, "5");
         ObjectNode response = atlasClientV1.callAPI(LINEAGE_V2_API, ObjectNode.class, queryParams, tableId);
@@ -120,7 +122,8 @@ public class EntityLineageJerseyResourceIT extends DataSetLineageJerseyResourceI
         String tableId = atlasClientV1.getEntity(HIVE_TABLE_TYPE,
                 AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, salesMonthlyTable).getId()._getId();
 
-        MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> queryParams = new MultivaluedHashMap();
+
         queryParams.add(DIRECTION_PARAM, BOTH_DIRECTION);
         queryParams.add(DEPTH_PARAM, "5");
         ObjectNode response = atlasClientV1.callAPI(LINEAGE_V2_API, ObjectNode.class, queryParams, tableId);

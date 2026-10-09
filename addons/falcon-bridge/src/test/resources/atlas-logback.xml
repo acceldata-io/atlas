@@ -104,9 +104,9 @@
     <appender-ref ref="console"/>
   </logger>
 
-  <logger name="com.sun.jersey" additivity="false" level="warn">
-    <appender-ref ref="console"/>
-  </logger>
+    <logger name="org.glassfish.jersey" additivity="false" level="warn">
+        <appender-ref ref="console" />
+    </logger>
 
 
   <!-- to avoid logs - The configuration log.flush.interval.messages = 1 was supplied but isn't a known config -->

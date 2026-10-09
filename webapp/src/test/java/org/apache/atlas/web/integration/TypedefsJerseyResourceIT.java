@@ -18,7 +18,6 @@
 
 package org.apache.atlas.web.integration;
 
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 import org.apache.atlas.AtlasClientV2;
 import org.apache.atlas.AtlasServiceException;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -43,6 +42,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
@@ -117,7 +117,8 @@ public class TypedefsJerseyResourceIT extends BaseResourceIT {
 
     @Test
     public void testGetHeaders() throws Exception {
-        MultivaluedMap<String, String> filterParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> filterParams = new MultivaluedHashMap();
+
         filterParams.add(SearchFilter.PARAM_TYPE, "ENTITY");
         List<AtlasTypeDefHeader> headers = clientV2.getAllTypeDefHeaders(new SearchFilter(filterParams));
         assertNotNull(headers);
@@ -181,7 +182,8 @@ public class TypedefsJerseyResourceIT extends BaseResourceIT {
         assertEquals(updatedTypeDefs.getEntityDefs().size(), atlasTypesDef.getEntityDefs().size());
         assertEquals(updatedTypeDefs.getEntityDefs().get(0).getName(), atlasTypesDef.getEntityDefs().get(0).getName());
 
-        MultivaluedMap<String, String> filterParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> filterParams = new MultivaluedHashMap();
+
         filterParams.add(SearchFilter.PARAM_TYPE, "ENTITY");
         AtlasTypesDef allTypeDefs = clientV2.getAllTypeDefs(new SearchFilter(filterParams));
         assertNotNull(allTypeDefs);
@@ -354,7 +356,8 @@ public class TypedefsJerseyResourceIT extends BaseResourceIT {
         assertNotNull(created);
         assertEquals(created.getEntityDefs().size(), atlasTypesDef.getEntityDefs().size());
 
-        MultivaluedMap<String, String> searchParams = new MultivaluedMapImpl();
+        MultivaluedMap<String, String> searchParams = new MultivaluedHashMap();
+
         searchParams.add(SearchFilter.PARAM_TYPE, "CLASS");
         searchParams.add(SearchFilter.PARAM_SUPERTYPE, classDefA.getName());
         SearchFilter searchFilter = new SearchFilter(searchParams);

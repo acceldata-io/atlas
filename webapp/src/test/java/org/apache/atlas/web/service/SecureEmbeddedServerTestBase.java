@@ -16,9 +16,6 @@
  */
 package org.apache.atlas.web.service;
 
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.Atlas;
 import org.apache.atlas.AtlasException;
@@ -33,12 +30,16 @@ import org.apache.hadoop.security.alias.CredentialProvider;
 import org.apache.hadoop.security.alias.CredentialProviderFactory;
 import org.apache.hadoop.security.alias.JavaKeyStoreProvider;
 import org.testng.Assert;
+import org.glassfish.jersey.client.ClientConfig;
 import org.testng.TestListenerAdapter;
 import org.testng.TestNG;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.io.IOException;
@@ -57,11 +58,12 @@ public class SecureEmbeddedServerTestBase {
 
 
     public static final int ATLAS_DEFAULT_HTTPS_PORT = 21443;
-    private SecureEmbeddedServer secureEmbeddedServer;
-    protected String providerUrl;
-    private Path jksPath;
-    protected WebResource service;
-    private int securePort;
+
+    protected String               providerUrl;
+    protected WebTarget service;
+    private   SecureEmbeddedServer secureEmbeddedServer;
+    private   Path                 jksPath;
+    private   int                  securePort;
 
     static {
         //for localhost testing only
@@ -91,11 +93,12 @@ public class SecureEmbeddedServerTestBase {
 
         String baseUrl = String.format("https://localhost:%d/", securePort);
 
-        DefaultClientConfig config = new DefaultClientConfig();
-        Client client = Client.create(config);
-        client.resource(UriBuilder.fromUri(baseUrl).build());
+        ClientConfig config = new ClientConfig();
+        Client              client = ClientBuilder.newClient(config);
 
-        service = client.resource(UriBuilder.fromUri(baseUrl).build());
+        client.target(UriBuilder.fromUri(baseUrl).build());
+
+        service = client.target(UriBuilder.fromUri(baseUrl).build());
     }
 
     @Test

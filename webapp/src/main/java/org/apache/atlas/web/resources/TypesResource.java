@@ -18,8 +18,6 @@
 
 package org.apache.atlas.web.resources;
 
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.core.ResourceContext;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.typedef.AtlasTypesDef;
@@ -47,6 +45,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -122,7 +121,8 @@ public class TypesResource {
             Map<String, Object> response = new HashMap<>();
             response.put(AtlasClient.REQUEST_ID, Servlets.getRequestId());
             response.put(AtlasClient.TYPES, typesResponse);
-            return Response.status(ClientResponse.Status.CREATED).entity(AtlasJson.toV1Json(response)).build();
+
+            return Response.status(Response.Status.CREATED).entity(AtlasJson.toV1Json(response)).build();
         } catch (AtlasBaseException e) {
             LOG.error("Type creation failed", e);
             throw new WebApplicationException(Servlets.getErrorResponse(e));

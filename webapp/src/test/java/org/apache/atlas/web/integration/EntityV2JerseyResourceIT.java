@@ -22,7 +22,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.Lists;
-import com.sun.jersey.api.client.ClientResponse;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasServiceException;
@@ -55,6 +54,8 @@ import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+
+import javax.ws.rs.core.Response;
 
 import java.io.File;
 import java.io.IOException;
@@ -412,10 +413,7 @@ public class EntityV2JerseyResourceIT extends BaseResourceIT {
 
     @Test(dependsOnMethods = "testSubmitEntity")
     public void testGetTraitNames() throws Exception {
-        AtlasClassifications classifications = atlasClientV2.getClassifications(createHiveTable().getGuid());
-        assertNotNull(classifications);
-        assertTrue(classifications.getList().size() > 0);
-        assertEquals(classifications.getList().size(), 9);
+        assertBaselineClassifications(createHiveTable().getGuid());
     }
 
     @Test(dependsOnMethods = "testSubmitEntity")
@@ -539,14 +537,16 @@ public class EntityV2JerseyResourceIT extends BaseResourceIT {
         AtlasEntity hiveTable = createHiveTable();
         assertEquals(hiveTable.getClassifications().size(), 7);
 
+        int baselineCount = atlasClientV2.getClassifications(hiveTable.getGuid()).getList().size();
+
         AtlasClassification piiClassification = new AtlasClassification(piiTrait.getName());
 
         atlasClientV2.addClassifications(hiveTable.getGuid(), Lists.newArrayList(piiClassification));
 
         AtlasClassifications classifications = atlasClientV2.getClassifications(hiveTable.getGuid());
         assertNotNull(classifications);
-        assertTrue(classifications.getList().size() > 0);
-        assertEquals(classifications.getList().size(), 9);
+        assertFalse(classifications.getList().isEmpty());
+        assertEquals(classifications.getList().size(), baselineCount + 1);
     }
 
     @Test(dependsOnMethods = "testGetTraitNames")
@@ -613,7 +613,7 @@ public class EntityV2JerseyResourceIT extends BaseResourceIT {
         } catch (AtlasServiceException ex) {
             assertNotNull(ex.getStatus());
 //            assertEquals(ex.getStatus(), ClientResponse.Status.NOT_FOUND);
-            assertEquals(ex.getStatus(), ClientResponse.Status.BAD_REQUEST);
+            assertEquals(ex.getStatus(), Response.Status.BAD_REQUEST);
             // Should it be a 400 or 404
         }
     }
@@ -634,8 +634,8 @@ public class EntityV2JerseyResourceIT extends BaseResourceIT {
             atlasClientV2.deleteClassification(guid, traitName);
             fail("Deletion should've failed for non-existent trait association");
         } catch (AtlasServiceException ex) {
-            Assert.assertNotNull(ex.getStatus());
-            assertEquals(ex.getStatus(), ClientResponse.Status.BAD_REQUEST);
+            assertNotNull(ex.getStatus());
+            assertEquals(ex.getStatus(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -1174,6 +1174,21 @@ public class EntityV2JerseyResourceIT extends BaseResourceIT {
         return new HashMap<String, String>() {{
             put(name, value);
         }};
+    }
+
+    private void assertBaselineClassifications(String entityGuid) throws AtlasServiceException {
+        AtlasClassifications classifications = atlasClientV2.getClassifications(entityGuid);
+        assertNotNull(classifications);
+        assertFalse(classifications.getList().isEmpty());
+
+        Set<String> expectedTraits = new HashSet<>(Arrays.asList(
+                CLASSIFICATION, PII_TAG, PHI_TAG, PCI_TAG, SOX_TAG, SEC_TAG, FINANCE_TAG));
+
+        for (AtlasClassification classification : classifications.getList()) {
+            expectedTraits.remove(classification.getTypeName());
+        }
+
+        assertTrue(expectedTraits.isEmpty(), "Missing baseline classifications: " + expectedTraits);
     }
 
     private AtlasEntityHeader createRandomDatabaseEntity() {

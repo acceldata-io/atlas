@@ -17,11 +17,11 @@
  */
 package org.apache.atlas.model;
 
-import com.sun.jersey.core.util.MultivaluedMapImpl;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
+import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -88,7 +88,6 @@ public class SearchFilter {
 
     public List<String> getParams(String name) {
         List<String> ret = null;
-
         if (name != null && params != null) {
             ret = params.get(name);
         }
@@ -99,7 +98,7 @@ public class SearchFilter {
     public void setParam(String name, String value) {
         if (name != null) {
             if (params == null) {
-                params = new MultivaluedMapImpl();
+                params = new MultivaluedHashMap<>();
             }
 
             params.add(name, value);
@@ -109,7 +108,7 @@ public class SearchFilter {
     public void setParam(String name, List<String> values) {
         if (name != null) {
             if (params == null) {
-                params = new MultivaluedMapImpl();
+                params = new MultivaluedHashMap<>();
             }
             params.put(name, values);
         }
