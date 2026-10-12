@@ -50,7 +50,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Duration;
@@ -317,6 +316,25 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
         }
     }
 
+    /**
+     * Replaces the value of a private static final field. Field.set() cannot be used for this: the
+     * "modifiers" hack stopped working with JEP 416 (JDK 18+), where the write fails with
+     * IllegalAccessException "static final field has no write access". sun.misc.Unsafe is looked up
+     * reflectively so this compiles and behaves the same on JDK 8, 11, 17 and 21.
+     */
+    private static void setStaticFinalField(Field field, Object value) throws Exception {
+        Field   unsafeField = Class.forName("sun.misc.Unsafe").getDeclaredField("theUnsafe");
+
+        unsafeField.setAccessible(true);
+
+        Object unsafe     = unsafeField.get(null);
+        Class<?> unsafeClass = unsafe.getClass();
+        Object base       = unsafeClass.getMethod("staticFieldBase", Field.class).invoke(unsafe, field);
+        long   offset     = (Long) unsafeClass.getMethod("staticFieldOffset", Field.class).invoke(unsafe, field);
+
+        unsafeClass.getMethod("putObjectVolatile", Object.class, long.class, Object.class).invoke(unsafe, base, offset, value);
+    }
+
     private static void addHBase2Support() {
         logArgs();
         try {
@@ -324,27 +342,13 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
 
             field.setAccessible(true);
 
-            Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-            getDeclaredFields0.setAccessible(true);
-            Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
-            Field modifiersField = null;
-            for (Field each : fields) {
-                if ("modifiers".equals(each.getName())) {
-                    modifiersField = each;
-                    break;
-                }
-            }
-
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
             Map<String, String> customMap = new HashMap<>(StandardStoreManager.getAllManagerClasses());
 
             customMap.put("hbase2", HBaseStoreManager.class.getName());
 
             ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
 
-            field.set(null, immap);
+            setStaticFinalField(field, immap);
 
             LOG.debug("Injected HBase2 support - {}", HBaseStoreManager.class.getName());
         } catch (Exception e) {
@@ -358,27 +362,13 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
 
             field.setAccessible(true);
 
-            Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-            getDeclaredFields0.setAccessible(true);
-            Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
-            Field modifiersField = null;
-            for (Field each : fields) {
-                if ("modifiers".equals(each.getName())) {
-                    modifiersField = each;
-                    break;
-                }
-            }
-
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
             Map<String, String> customMap = new HashMap<>(StandardStoreManager.getAllManagerClasses());
 
             customMap.put("rdbms", RdbmsStoreManager.class.getName());
 
             ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
 
-            field.set(null, immap);
+            setStaticFinalField(field, immap);
 
             LOG.debug("Injected RDBMS support - {}", RdbmsStoreManager.class.getName());
         } catch (Exception e) {
@@ -392,27 +382,13 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
 
             field.setAccessible(true);
 
-            Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-            getDeclaredFields0.setAccessible(true);
-            Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
-            Field modifiersField = null;
-            for (Field each : fields) {
-                if ("modifiers".equals(each.getName())) {
-                    modifiersField = each;
-                    break;
-                }
-            }
-
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
             Map<String, String> customMap = new HashMap<>(StandardIndexProvider.getAllProviderClasses());
 
             customMap.put("solr", Solr6Index.class.getName());
 
             ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
 
-            field.set(null, immap);
+            setStaticFinalField(field, immap);
 
             LOG.debug("Injected solr6 index - {}", Solr6Index.class.getName());
         } catch (Exception e) {
@@ -426,27 +402,13 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
 
             field.setAccessible(true);
 
-            Method getDeclaredFields0 = Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
-            getDeclaredFields0.setAccessible(true);
-            Field[] fields = (Field[]) getDeclaredFields0.invoke(Field.class, false);
-            Field modifiersField = null;
-            for (Field each : fields) {
-                if ("modifiers".equals(each.getName())) {
-                    modifiersField = each;
-                    break;
-                }
-            }
-
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
             Map<String, String> customMap = new HashMap<>(StandardIndexProvider.getAllProviderClasses());
 
             customMap.put("elasticsearch", ElasticSearch7Index.class.getName());
 
             ImmutableMap<String, String> immap = ImmutableMap.copyOf(customMap);
 
-            field.set(null, immap);
+            setStaticFinalField(field, immap);
 
             LOG.debug("Injected es7 index - {}", ElasticSearch7Index.class.getName());
         } catch (Exception e) {
