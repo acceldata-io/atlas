@@ -29,7 +29,7 @@
     <packaging>jar</packaging>
 
     <name>HBase shaded client with fix</name>
-    <description>HBase shaded client with fix to remove 2 entries in META-INF/services</description>
+    <description>HBase shaded client with fix to remove 3 entries in META-INF/services</description>
 
     <properties>
         <checkstyle.failOnViolation>true</checkstyle.failOnViolation>
@@ -47,7 +47,14 @@
 
     <build>
         <plugins>
-            <!-- Unpack hbase-shaded-client jar, skipping 2 entries in META-INF/services -->
+            <!-- Unpack hbase-shaded-client jar, skipping 3 entries in META-INF/services:
+                 - javax.ws.rs.ext.MessageBodyWriter / MessageBodyReader (existing exclusions)
+                 - java.net.spi.InetAddressResolverProvider: the shaded jar lists the relocated
+                   org.apache.hadoop.hbase.shaded.org.xbill.DNS.spi.DnsjavaInetAddressResolverProvider, but the class is
+                   only present unrelocated under META-INF/versions/18 and the manifest is not Multi-Release. On JDK 18+
+                   InetAddress calls ServiceLoader for this type and fails with
+                   ServiceConfigurationError: Provider ... DnsjavaInetAddressResolverProvider not found.
+                   JDK 17 never looks up this service, so dropping the entry is safe on 17 and 21. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -64,7 +71,7 @@
                                     <groupId>org.apache.hbase</groupId>
                                     <artifactId>hbase-shaded-client</artifactId>
                                     <version>${hbase.version}-hadoop3</version>
-                                    <excludes>META-INF/services/javax.ws.rs.ext.MessageBodyWriter,META-INF/services/javax.ws.rs.ext.MessageBodyReader</excludes>
+                                    <excludes>META-INF/services/javax.ws.rs.ext.MessageBodyWriter,META-INF/services/javax.ws.rs.ext.MessageBodyReader,META-INF/services/java.net.spi.InetAddressResolverProvider</excludes>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
