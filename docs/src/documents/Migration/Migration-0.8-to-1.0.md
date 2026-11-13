@@ -49,7 +49,7 @@ _Atlas Migration Export Utility_ from Apache Atlas branch-0.8 should be used to 
 To build this utility:
    * Navigate to root directory of Apache Atlas branch-0.8 local repo (say, _/home/atlas/_)
    * Build using the command: _mvn clean -DskipTests package -Pdist_.
-   * After successful build, the _Atlas Migration Utility_ can be found in this _distro/target_ directory. (Say, _/home/atlas/distro/target/apache-atlas-0.8.3-SNAPSHOT-bin/apache-atlas-0.8.3-SNAPSHOT/tools/migration-exporter_)
+   * After successful build, the _Atlas Migration Utility_ can be found in this _distro/target_ directory. (Say, _/home/atlas/distro/target/apache-atlas-0.8.3-1011-bin/apache-atlas-0.8.3-1011/tools/migration-exporter_)
 
 Move the _Atlas Migration Utility_ directory to the Apache Atlas 0.8 cluster.
 
