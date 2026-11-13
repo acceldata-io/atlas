@@ -60,6 +60,11 @@ if [ -d "${ATLAS_CONF_DIR}" ] && [ -f "${ATLAS_CONF_DIR}/atlas-env.sh" ]; then
   source ${ATLAS_CONF_DIR}/atlas-env.sh
 fi
 
+if [ -n "${JAVA_HOME}" ]; then
+  JAVA_BIN="${JAVA_HOME}/bin/java"
+  JAR_BIN="${JAVA_HOME}/bin/jar"
+fi
+
 # log dir for applications
 ATLAS_LOG_DIR="${ATLAS_LOG_DIR:-/var/log/atlas}"
 export ATLAS_LOG_DIR
@@ -135,6 +140,25 @@ JAVA_PROPERTIES="$ATLAS_OPTS -Datlas.log.dir=$ATLAS_LOG_DIR -Datlas.log.file=imp
 
 IMPORT_ARGS=
 JVM_ARGS=
+
+# Detect Java version from JAVA_BIN and add JVM options for Java 17+
+JAVA_VERSION=$("${JAVA_BIN}" -version 2>&1 | awk -F '"' '/version/ {print $2}')
+JAVA_MAJOR_VERSION=$(echo "${JAVA_VERSION}" | awk -F. '{print $1}')
+
+if [ "${JAVA_MAJOR_VERSION}" -ge 17 ] 2>/dev/null; then
+  echo "Detected Java ${JAVA_VERSION} (>= 17), adding module access options"
+  JVM_ARGS="${JVM_ARGS} --add-opens java.base/java.lang=ALL-UNNAMED \
+--add-opens java.base/java.util=ALL-UNNAMED \
+--add-opens java.base/java.util.concurrent=ALL-UNNAMED \
+--add-opens java.base/java.nio=ALL-UNNAMED \
+--add-opens java.base/java.net=ALL-UNNAMED \
+--add-opens java.base/java.io=ALL-UNNAMED \
+--add-opens java.base/sun.nio.ch=ALL-UNNAMED \
+--add-opens java.base/java.lang.reflect=ALL-UNNAMED \
+--add-opens java.base/java.lang.invoke=ALL-UNNAMED \
+--add-opens java.base/java.text=ALL-UNNAMED \
+--add-opens java.sql/java.sql=ALL-UNNAMED"
+fi
 
 while true
 do
