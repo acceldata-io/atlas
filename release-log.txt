@@ -556,7 +556,7 @@ ATLAS-392 Rename application.properties to atlas-application.properties (rishabh
 ATLAS-381 HiveMetaStoreBridge will not connect to a kerberized hive metastore (dossett@gmail.com via shwethags)
 ATLAS-20 Rename env variables from METADATA to ATLAS (rishabhbhardwaj via shwethags)
 ATLAS-360 Secure cluster Atlas-solr integration instructions (tbeerbower via shwethags)
-ATLAS-368 Change trunk version to 0.7-incubating-SNAPSHOT (sumasai via shwethags)
+ATLAS-368 Change trunk version to 0.7-incubating-1011 (sumasai via shwethags)
 ATLAS-383 tests for classtype.convert() with id (sumasai via shwethags)
 ATLAS-263 Searching for a multi word trait always returns empty result (girishrp via shwethags)
 
@@ -669,7 +669,7 @@ ATLAS-32 Atlas hook fails to fire in certain secure deployments (jmaron)
 ATLAS-31 ATLAS build fails with clean repo (sumasai via shwethags)
 ATLAS-33 Atlas restart fails (shwethags)
 ATLAS-29 client authentication fails in secure environment from server processes (jmaron)
-ATLAS-10 Update trunk version to 0.6-incubating-SNAPSHOT (shwethags)
+ATLAS-10 Update trunk version to 0.6-incubating-1011 (shwethags)
 
 --Release 0.5-incubating
 
