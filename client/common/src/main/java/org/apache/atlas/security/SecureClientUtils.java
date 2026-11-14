@@ -91,7 +91,7 @@ public class SecureClientUtils {
     }
 
     public HttpUrlConnectorProvider.ConnectionFactory getClientConnectionHandler(ClientConfig config, org.apache.commons.configuration2.Configuration clientConfig, String doAsUser, final UserGroupInformation ugi) {
-        config.getProperties().put(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true);
+        config.property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true);
 
         Configuration conf = new Configuration();
         conf.addResource(conf.get(SSLFactory.SSL_CLIENT_CONF_KEY, SecurityProperties.SSL_CLIENT_PROPERTIES));
