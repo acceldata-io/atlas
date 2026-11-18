@@ -47,6 +47,7 @@ public class AtlasPatchManager {
     private final GraphBackedSearchIndexer indexer;
     private final EntityGraphMapper entityGraphMapper;
     private PatchContext            context;
+    private boolean                 defaultHandlersRegistered;
 
     @Inject
     public AtlasPatchManager(AtlasGraph atlasGraph, AtlasTypeRegistry typeRegistry, GraphBackedSearchIndexer indexer, EntityGraphMapper entityGraphMapper) {
@@ -57,7 +58,7 @@ public class AtlasPatchManager {
     }
 
     public AtlasPatches getAllPatches() {
-        return context.getPatchRegistry().getAllPatches();
+        return getOrCreatePatchContext().getPatchRegistry().getAllPatches();
     }
 
     public void applyAll() {
@@ -90,7 +91,30 @@ public class AtlasPatchManager {
     private void init() {
         LOG.info("==> AtlasPatchManager.init()");
 
-        this.context = new PatchContext(atlasGraph, typeRegistry, indexer, entityGraphMapper);
+        getOrCreatePatchContext();
+        registerDefaultHandlersIfNeeded();
+
+        LOG.info("<== AtlasPatchManager.init()");
+    }
+
+    /**
+     * Ensures {@link PatchContext} exists before JSON typedef patches register Java patch handlers
+     * (AtlasTypeDefStoreInitializer runs before {@link AtlasPatchService#applyAll()}).
+     */
+    public PatchContext getOrCreatePatchContext() {
+        if (this.context == null) {
+            LOG.info("AtlasPatchManager.getOrCreatePatchContext(): creating PatchContext");
+
+            this.context = new PatchContext(atlasGraph, typeRegistry, indexer, entityGraphMapper);
+        }
+
+        return this.context;
+    }
+
+    private void registerDefaultHandlersIfNeeded() {
+        if (defaultHandlersRegistered) {
+            return;
+        }
 
         // register all java patches here
         handlers.add(new UniqueAttributePatch(context));
@@ -104,7 +128,7 @@ public class AtlasPatchManager {
         handlers.add(new RelationshipTypeNamePatch(context));
         handlers.add(new ProcessImpalaNamePatch(context));
 
-        LOG.info("<== AtlasPatchManager.init()");
+        defaultHandlersRegistered = true;
     }
 
     public void addPatchHandler(AtlasPatchHandler patchHandler) {
@@ -112,6 +136,6 @@ public class AtlasPatchManager {
     }
 
     public PatchContext getContext() {
-        return this.context;
+        return getOrCreatePatchContext();
     }
 }
