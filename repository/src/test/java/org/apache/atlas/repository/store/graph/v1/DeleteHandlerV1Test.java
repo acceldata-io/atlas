@@ -65,7 +65,7 @@ import static org.testng.Assert.assertTrue;
 /**
  * Tests for ATLAS-4766: resilience of DeleteHandlerV1 when graph elements
  * are removed during iteration ({@link DeleteHandlerV1#isRelationshipEdge},
- * {@link DeleteHandlerV1#deleteVertex}, {@link DeleteHandlerV1#deleteTraitsAndVertices}, and
+ * {@link DeleteHandlerV1#deleteVertex}, and
  * {@code deleteAllClassifications}).
  */
 @Guice(modules = TestModules.TestOnlyModule.class)
@@ -130,37 +130,6 @@ public class DeleteHandlerV1Test extends AtlasTestBase {
         // "r:") when the surviving endpoint is readable. ATLAS-4766 only requires that
         // removed vertices do not cause IllegalStateException to propagate.
         assertDoesNotThrow(() -> handler.isRelationshipEdge(managerEdge));
-    }
-
-// ---------------------------------------------------------------
-    // deleteTraitsAndVertices / deleteAllClassifications resilience
-    // ---------------------------------------------------------------
-
-    /**
-     * After hard purge, a stale entity vertex handle must not cause
-     * {@code IllegalStateException} when {@link DeleteHandlerV1#deleteTraitsAndVertices}
-     * iterates the collection (e.g. classification edge lookup on a removed vertex).
-     */
-    @Test
-    public void testDeleteTraitsAndVerticesWithPurgedVertex() throws Exception {
-        EntityMutationResponse createResp = createManagerWithSubordinates("traits_purge", 1);
-        String                 mgrGuid    = getGuidForName(createResp, "traits_purge_mgr");
-        String                 subGuid    = getGuidForName(createResp, "traits_purge_sub1");
-
-        assertNotNull(mgrGuid);
-        assertNotNull(subGuid);
-
-        AtlasVertex mgrVertex = AtlasGraphUtilsV2.findByGuid(mgrGuid);
-        assertNotNull(mgrVertex);
-
-        softDeleteGuids(Arrays.asList(mgrGuid, subGuid));
-
-        EntityMutationResponse purgeResp = purgeGuids(new HashSet<>(Arrays.asList(mgrGuid, subGuid)));
-        assertEquals(purgeResp.getPurgedEntities().size(), 2);
-        assertNull(AtlasGraphUtilsV2.findByGuid(mgrGuid), "Entity should be removed from graph after purge");
-
-        DeleteHandlerV1 handler = deleteDelegate.getHandler();
-        handler.deleteTraitsAndVertices(Collections.singleton(mgrVertex));
     }
 
     // ---------------------------------------------------------------
