@@ -74,7 +74,7 @@ public class ExportService {
                          AuditsWriter auditsWriter, HdfsPathEntityCreator hdfsPathEntityCreator,
                          GlossaryService glossaryService) {
         this.typeRegistry         = typeRegistry;
-        this.entityGraphRetriever = new EntityGraphRetriever(graph, this.typeRegistry);
+        this.entityGraphRetriever = new EntityGraphRetriever(graph, this.typeRegistry, false, true);
         this.auditsWriter         = auditsWriter;
         this.hdfsPathEntityCreator = hdfsPathEntityCreator;
         this.glossaryService = glossaryService;

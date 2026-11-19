@@ -197,9 +197,16 @@ public class ImportService {
         try {
             LOG.info("==> import(user={}, from={}, fileName={})", userName, requestingIP, fileName);
 
-            File file = new File(fileName);
+            File file = ImportFilePathValidator.validate(fileName);
+
             result = run(new FileInputStream(file), request, userName, hostName, requestingIP);
         } catch (AtlasBaseException excp) {
+            if (isImportFileAccessFailure(excp)) {
+                LOG.warn("import(user={}, from={}, fileName={}): invalid import file", userName, requestingIP, fileName, excp);
+
+                throw new AtlasBaseException(AtlasErrorCode.IMPORT_FILE_NOT_ACCESSIBLE);
+            }
+
             LOG.error("import(user={}, from={}, fileName={}): failed", userName, requestingIP, excp);
 
             throw excp;
@@ -217,6 +224,10 @@ public class ImportService {
         }
 
         return result;
+    }
+
+    private static boolean isImportFileAccessFailure(AtlasBaseException excp) {
+        return excp.getAtlasErrorCode() == AtlasErrorCode.IMPORT_FILE_NOT_ACCESSIBLE || excp.getAtlasErrorCode() == AtlasErrorCode.IMPORT_ATTEMPTING_EMPTY_ZIP;
     }
 
     private void processTypes(AtlasTypesDef typeDefinitionMap, AtlasImportResult result) throws AtlasBaseException {
